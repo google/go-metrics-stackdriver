@@ -50,7 +50,7 @@ type Sink struct {
 	bucketer BucketFn
 	taskInfo *TaskInfo
 
-	sync.Mutex
+	mu sync.Mutex
 }
 
 // TaskInfo must uniquely identify the process that the Sink metrics are
@@ -113,8 +113,8 @@ func (s *Sink) flushMetrics(ctx context.Context) {
 }
 
 func (s *Sink) reset() {
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	s.firstTime = time.Now()
 	s.gauges = make(map[string]*gauge)
@@ -127,7 +127,7 @@ func (s *Sink) deep() (time.Time, map[string]*gauge, map[string]*counter, map[st
 	rCounters := make(map[string]*counter, len(s.counters))
 	rHistograms := make(map[string]*histogram, len(s.histograms))
 
-	s.Lock()
+	s.mu.Lock()
 	end := time.Now()
 	for k, v := range s.gauges {
 		rGauges[k] = &gauge{
@@ -150,7 +150,7 @@ func (s *Sink) deep() (time.Time, map[string]*gauge, map[string]*counter, map[st
 		copy(r.counts, v.counts)
 		rHistograms[k] = r
 	}
-	s.Unlock()
+	s.mu.Unlock()
 
 	return end, rGauges, rCounters, rHistograms
 }
@@ -310,8 +310,8 @@ func (s *Sink) SetGaugeWithLabels(key []string, val float32, labels []metrics.La
 		value: val,
 	}
 
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	s.gauges[n.key] = g
 }
@@ -330,8 +330,8 @@ func (s *Sink) IncrCounter(key []string, val float32) {
 func (s *Sink) IncrCounterWithLabels(key []string, val float32, labels []metrics.Label) {
 	n := newSeries(key, labels)
 
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	c, ok := s.counters[n.key]
 	if ok {
@@ -353,8 +353,8 @@ func (s *Sink) AddSample(key []string, val float32) {
 func (s *Sink) AddSampleWithLabels(key []string, val float32, labels []metrics.Label) {
 	n := newSeries(key, labels)
 
-	s.Lock()
-	defer s.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	h, ok := s.histograms[n.key]
 	if ok {
