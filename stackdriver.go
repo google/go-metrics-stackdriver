@@ -79,10 +79,17 @@ func DefaultBucketer(name string) []float64 {
 // NewSink creates a Sink to flush metrics to stackdriver every interval. The
 // interval should be greater than 1 minute.
 func NewSink(interval time.Duration, taskInfo *TaskInfo, client *monitoring.MetricClient) *Sink {
+	return NewSinkCustomBucket(interval, taskInfo, client, DefaultBucketer)
+}
+
+// NewSinkCustomBucket creates a Sink to flush metrics to stackdriver every
+// interval. The bucketer is used to determine histogram bucket thresholds
+// for the sampled metrics.
+func NewSinkCustomBucket(interval time.Duration, taskInfo *TaskInfo, client *monitoring.MetricClient, bucketer BucketFn) *Sink {
 	s := &Sink{
 		client:   client,
 		interval: interval,
-		bucketer: DefaultBucketer,
+		bucketer: bucketer,
 		taskInfo: taskInfo,
 	}
 	s.reset()
