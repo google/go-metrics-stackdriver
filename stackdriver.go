@@ -18,11 +18,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	monitoring "cloud.google.com/go/monitoring/apiv3"
 	metrics "github.com/armon/go-metrics"
 	googlepb "github.com/golang/protobuf/ptypes/timestamp"
@@ -48,17 +51,46 @@ type Sink struct {
 	histograms map[string]*histogram
 
 	bucketer BucketFn
-	taskInfo *TaskInfo
+	taskInfo *taskInfo
 
 	mu sync.Mutex
 }
 
-// TaskInfo must uniquely identify the process that the Sink metrics are
-// collecting. These will be added as labels to the metric so that values can
-// be filtered/aggregated correctly.
-//
-// https://cloud.google.com/monitoring/api/resources#tag_generic_task
-type TaskInfo struct {
+// Config options for the stackdriver Sink.
+type Config struct {
+	// The Google Cloud Project ID to publish metrics to.
+	// Optional. GCP instance metadata is used to determine the ProjectID if
+	// not set.
+	ProjectID string
+	// The bucketer is used to determine histogram bucket boundaries
+	// for the sampled metrics.
+	// Optional. Defaults to DefaultBucketer
+	Bucketer BucketFn
+	// The interval between sampled metric points. Must be > 1 minute.
+	// https://cloud.google.com/monitoring/custom-metrics/creating-metrics#writing-ts
+	// Optional. Defaults to 1 minute.
+	ReportingInterval time.Duration
+
+	// The location of the running task. See:
+	// https://cloud.google.com/monitoring/api/resources#tag_generic_task
+	// Optional. GCP instance metadata is used to determine the location,
+	// otherwise it defaults to 'global'.
+	Location string
+	// The namespace for the running task. See:
+	// https://cloud.google.com/monitoring/api/resources#tag_generic_task
+	// Optional. Defaults to 'default'.
+	Namespace string
+	// The job name for the running task. See:
+	// https://cloud.google.com/monitoring/api/resources#tag_generic_task
+	// Optional. Defaults to the running program name.
+	Job string
+	// The task ID for the running task. See:
+	// https://cloud.google.com/monitoring/api/resources#tag_generic_task
+	// Optional. Defaults to a combination of hostname+pid.
+	TaskID string
+}
+
+type taskInfo struct {
 	ProjectID string
 	Location  string
 	Namespace string
@@ -73,25 +105,62 @@ type BucketFn func(string) []float64
 // DefaultBucketer is the default BucketFn used to determing bucketing values
 // for metrics.
 func DefaultBucketer(name string) []float64 {
-	return []float64{10.0, 25.0, 50.0, 100.0, 150.0, 250.0, 300.0, 500.0, 1000.0, 2000.0, 5000.0}
+	return []float64{10.0, 25.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0, 1000.0, 1500.0, 2000.0, 3000.0, 4000.0, 5000.0}
 }
 
 // NewSink creates a Sink to flush metrics to stackdriver every interval. The
 // interval should be greater than 1 minute.
-func NewSink(interval time.Duration, taskInfo *TaskInfo, client *monitoring.MetricClient) *Sink {
-	return NewSinkCustomBucket(interval, taskInfo, client, DefaultBucketer)
-}
-
-// NewSinkCustomBucket creates a Sink to flush metrics to stackdriver every
-// interval. The bucketer is used to determine histogram bucket thresholds
-// for the sampled metrics.
-func NewSinkCustomBucket(interval time.Duration, taskInfo *TaskInfo, client *monitoring.MetricClient, bucketer BucketFn) *Sink {
+func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 	s := &Sink{
 		client:   client,
-		interval: interval,
-		bucketer: bucketer,
-		taskInfo: taskInfo,
+		bucketer: config.Bucketer,
+		interval: config.ReportingInterval,
+		taskInfo: &taskInfo{
+			ProjectID: config.ProjectID,
+			Location:  config.Location,
+			Namespace: config.Namespace,
+			Job:       config.Job,
+			TaskID:    config.TaskID,
+		},
 	}
+
+	// apply defaults if not configured explicitly
+	if s.bucketer == nil {
+		s.bucketer = DefaultBucketer
+	}
+	if s.interval < 60*time.Second {
+		s.interval = 60 * time.Second
+	}
+	if s.taskInfo.ProjectID == "" {
+		id, err := metadata.ProjectID()
+		if err != nil {
+			log.Printf("could not configure go-metrics stackdriver ProjectID: %s", err)
+		}
+		s.taskInfo.ProjectID = id
+	}
+	if s.taskInfo.Location == "" {
+		// attempt to detect
+		zone, err := metadata.Zone()
+		if err != nil {
+			log.Printf("could not configure go-metric stackdriver location: %s", err)
+			zone = "global"
+		}
+		s.taskInfo.Location = zone
+	}
+	if s.taskInfo.Namespace == "" {
+		s.taskInfo.Namespace = "default"
+	}
+	if s.taskInfo.Job == "" {
+		s.taskInfo.Job = path.Base(os.Args[0])
+	}
+	if s.taskInfo.TaskID == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			hostname = "localhost"
+		}
+		s.taskInfo.TaskID = "go-" + strconv.Itoa(os.Getpid()) + "@" + hostname
+	}
+
 	s.reset()
 
 	// run cancelable goroutine that reports on interval

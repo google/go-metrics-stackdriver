@@ -31,7 +31,7 @@ import (
 )
 
 func benchmarkAddSample(concurrency int, b *testing.B) {
-	ss := NewSink(100*time.Millisecond, &TaskInfo{}, nil)
+	ss := newTestSink(100*time.Millisecond, nil)
 	var wg sync.WaitGroup
 
 	for i := 0; i < concurrency; i++ {
@@ -61,7 +61,7 @@ func BenchmarkAddSample100(b *testing.B) { benchmarkAddSample(100, b) }
 // snapshotted. We isolate and benchmark this copy since all metrics collection
 // functions will block until the copy completes.
 func benchmarkCopy(samples, gauges, counters int, b *testing.B) {
-	ss := NewSink(0*time.Second, &TaskInfo{}, nil)
+	ss := newTestSink(0*time.Second, nil)
 	for i := 0; i < samples; i++ {
 		ss.AddSample([]string{fmt.Sprintf("%d", i)}, float32(i)*0.3)
 	}
@@ -87,7 +87,7 @@ func BenchmarkReport50(b *testing.B)  { benchmarkCopy(50, 50, 50, b) }
 func BenchmarkReport100(b *testing.B) { benchmarkCopy(100, 100, 100, b) }
 
 func TestSample(t *testing.T) {
-	ss := NewSink(0*time.Second, &TaskInfo{}, nil)
+	ss := newTestSink(0*time.Second, nil)
 
 	tests := []struct {
 		name     string
@@ -271,4 +271,15 @@ func (s *mockMetricServer) CreateTimeSeries(ctx context.Context, req *monitoring
 		return s.createFn(ctx, req)
 	}
 	return nil, errors.New("unimplemented")
+}
+
+// Skips defaults that are not appropriate for tests.
+func newTestSink(interval time.Duration, client *monitoring.MetricClient) *Sink {
+	s := &Sink{}
+	s.taskInfo = &taskInfo{}
+	s.interval = interval
+	s.bucketer = DefaultBucketer
+	s.reset()
+	go s.flushMetrics(context.Background())
+	return s
 }

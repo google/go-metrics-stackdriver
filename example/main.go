@@ -46,16 +46,13 @@ func main() {
 		projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	}
 
-	taskInfo := &stackdriver.TaskInfo{
-		ProjectID: projectID,
-		Location:  "us-east1-c",
-		Job:       "example",
-	}
-
-	log.Printf("initializing sink: %v", taskInfo)
+	log.Printf("initializing sink")
 
 	// create sink
-	ss := stackdriver.NewSink(60*time.Second, taskInfo, client)
+	ss := stackdriver.NewSink(client, &stackdriver.Config{
+		ProjectID: projectID,
+		Location:  "us-east1-c",
+	})
 
 	// capture ctrl+c
 	c := make(chan os.Signal, 1)

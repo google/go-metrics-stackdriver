@@ -14,11 +14,9 @@ This library provides a stackdriver sink for applications instrumented with the
 import "github.com/google/go-metrics-stackdriver"
 ...
 client, _ := monitoring.NewMetricClient(context.Background())
-ss := stackdriver.NewSink(60*time.Second, &stackdriver.TaskInfo{
+ss := stackdriver.NewSink(client, &stackdriver.Config{
   ProjectID: projectID,
-  Location:  "us-east1-c",
-  Job:       "example-app",
-}, client)
+})
 ...
 ss.SetGauge([]string{"foo"}, 42)
 ss.IncrCounter([]string{"baz"}, 1)
