@@ -234,10 +234,6 @@ func (s *Sink) deep() (time.Time, map[string]*gauge, map[string]*counter, map[st
 func (s *Sink) report(ctx context.Context) {
 	end, rGauges, rCounters, rHistograms := s.deep()
 
-	if s.client == nil {
-		return
-	}
-
 	// https://cloud.google.com/monitoring/api/resources
 	resource := &monitoredrespb.MonitoredResource{
 		Type: "generic_task",
@@ -250,72 +246,56 @@ func (s *Sink) report(ctx context.Context) {
 		},
 	}
 
+	ts := []*monitoringpb.TimeSeries{}
+
 	for _, v := range rCounters {
-		err := s.client.CreateTimeSeries(ctx, &monitoringpb.CreateTimeSeriesRequest{
-			Name: fmt.Sprintf("projects/%s", s.taskInfo.ProjectID),
-			TimeSeries: []*monitoringpb.TimeSeries{
-				{
-					Metric: &metricpb.Metric{
-						Type:   path.Join("custom.googleapis.com", "go-metrics", v.name.name),
-						Labels: v.name.labelMap(),
+		ts = append(ts, &monitoringpb.TimeSeries{
+			Metric: &metricpb.Metric{
+				Type:   path.Join("custom.googleapis.com", "go-metrics", v.name.name),
+				Labels: v.name.labelMap(),
+			},
+			MetricKind: metric.MetricDescriptor_GAUGE,
+			Resource:   resource,
+			Points: []*monitoringpb.Point{
+				&monitoringpb.Point{
+					Interval: &monitoringpb.TimeInterval{
+						EndTime: &googlepb.Timestamp{
+							Seconds: end.Unix(),
+						},
 					},
-					MetricKind: metric.MetricDescriptor_GAUGE,
-					Resource:   resource,
-					Points: []*monitoringpb.Point{
-						&monitoringpb.Point{
-							Interval: &monitoringpb.TimeInterval{
-								EndTime: &googlepb.Timestamp{
-									Seconds: end.Unix(),
-								},
-							},
-							Value: &monitoringpb.TypedValue{
-								Value: &monitoringpb.TypedValue_DoubleValue{
-									DoubleValue: v.value,
-								},
-							},
+					Value: &monitoringpb.TypedValue{
+						Value: &monitoringpb.TypedValue_DoubleValue{
+							DoubleValue: v.value,
 						},
 					},
 				},
 			},
 		})
-
-		if err != nil {
-			log.Printf("Failed to write time series data: %v", err)
-		}
 	}
 
 	for _, v := range rGauges {
-		err := s.client.CreateTimeSeries(ctx, &monitoringpb.CreateTimeSeriesRequest{
-			Name: fmt.Sprintf("projects/%s", s.taskInfo.ProjectID),
-			TimeSeries: []*monitoringpb.TimeSeries{
-				{
-					Metric: &metricpb.Metric{
-						Type:   path.Join("custom.googleapis.com", "go-metrics", v.name.name),
-						Labels: v.name.labelMap(),
+		ts = append(ts, &monitoringpb.TimeSeries{
+			Metric: &metricpb.Metric{
+				Type:   path.Join("custom.googleapis.com", "go-metrics", v.name.name),
+				Labels: v.name.labelMap(),
+			},
+			MetricKind: metric.MetricDescriptor_GAUGE,
+			Resource:   resource,
+			Points: []*monitoringpb.Point{
+				&monitoringpb.Point{
+					Interval: &monitoringpb.TimeInterval{
+						EndTime: &googlepb.Timestamp{
+							Seconds: end.Unix(),
+						},
 					},
-					MetricKind: metric.MetricDescriptor_GAUGE,
-					Resource:   resource,
-					Points: []*monitoringpb.Point{
-						&monitoringpb.Point{
-							Interval: &monitoringpb.TimeInterval{
-								EndTime: &googlepb.Timestamp{
-									Seconds: end.Unix(),
-								},
-							},
-							Value: &monitoringpb.TypedValue{
-								Value: &monitoringpb.TypedValue_DoubleValue{
-									DoubleValue: float64(v.value),
-								},
-							},
+					Value: &monitoringpb.TypedValue{
+						Value: &monitoringpb.TypedValue_DoubleValue{
+							DoubleValue: float64(v.value),
 						},
 					},
 				},
 			},
 		})
-
-		if err != nil {
-			log.Printf("Failed to write time series data: %v", err)
-		}
 	}
 
 	for _, v := range rHistograms {
@@ -325,45 +305,57 @@ func (s *Sink) report(ctx context.Context) {
 			count += int64(i)
 		}
 
-		err := s.client.CreateTimeSeries(ctx, &monitoringpb.CreateTimeSeriesRequest{
-			Name: fmt.Sprintf("projects/%s", s.taskInfo.ProjectID),
-			TimeSeries: []*monitoringpb.TimeSeries{
-				{
-					Metric: &metricpb.Metric{
-						Type:   path.Join("custom.googleapis.com", "go-metrics", v.name.name),
-						Labels: v.name.labelMap(),
+		ts = append(ts, &monitoringpb.TimeSeries{
+			Metric: &metricpb.Metric{
+				Type:   path.Join("custom.googleapis.com", "go-metrics", v.name.name),
+				Labels: v.name.labelMap(),
+			},
+			MetricKind: metric.MetricDescriptor_CUMULATIVE,
+			Resource:   resource,
+			Points: []*monitoringpb.Point{
+				&monitoringpb.Point{
+					Interval: &monitoringpb.TimeInterval{
+						StartTime: &googlepb.Timestamp{
+							Seconds: s.firstTime.Unix(),
+						},
+						EndTime: &googlepb.Timestamp{
+							Seconds: end.Unix(),
+						},
 					},
-					MetricKind: metric.MetricDescriptor_CUMULATIVE,
-					Resource:   resource,
-					Points: []*monitoringpb.Point{
-						&monitoringpb.Point{
-							Interval: &monitoringpb.TimeInterval{
-								StartTime: &googlepb.Timestamp{
-									Seconds: s.firstTime.Unix(),
-								},
-								EndTime: &googlepb.Timestamp{
-									Seconds: end.Unix(),
-								},
-							},
-							Value: &monitoringpb.TypedValue{
-								Value: &monitoringpb.TypedValue_DistributionValue{
-									DistributionValue: &distributionpb.Distribution{
-										BucketOptions: &distributionpb.Distribution_BucketOptions{
-											Options: &distributionpb.Distribution_BucketOptions_ExplicitBuckets{
-												ExplicitBuckets: &distributionpb.Distribution_BucketOptions_Explicit{
-													Bounds: v.buckets,
-												},
-											},
+					Value: &monitoringpb.TypedValue{
+						Value: &monitoringpb.TypedValue_DistributionValue{
+							DistributionValue: &distributionpb.Distribution{
+								BucketOptions: &distributionpb.Distribution_BucketOptions{
+									Options: &distributionpb.Distribution_BucketOptions_ExplicitBuckets{
+										ExplicitBuckets: &distributionpb.Distribution_BucketOptions_Explicit{
+											Bounds: v.buckets,
 										},
-										BucketCounts: v.counts,
-										Count:        count,
 									},
 								},
+								BucketCounts: v.counts,
+								Count:        count,
 							},
 						},
 					},
 				},
 			},
+		})
+	}
+
+	if s.client == nil {
+		return
+	}
+
+	for i := 0; i < len(ts); i += 200 {
+		end := i + 200
+
+		if end > len(ts) {
+			end = len(ts)
+		}
+
+		err := s.client.CreateTimeSeries(ctx, &monitoringpb.CreateTimeSeriesRequest{
+			Name:       fmt.Sprintf("projects/%s", s.taskInfo.ProjectID),
+			TimeSeries: ts[i:end],
 		})
 
 		if err != nil {

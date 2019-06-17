@@ -224,6 +224,24 @@ func TestSample(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "batching",
+			collect: func() {
+				for i := 0; i < 300; i++ {
+					ss.SetGauge([]string{"foo", fmt.Sprintf("%d", i)}, 50.0)
+				}
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					// 300 TimeSeries were created, we expect 2 RPCs (first with 200 and second with 100 TS)
+					if len(req.TimeSeries) == 200 || len(req.TimeSeries) == 100 {
+						return &emptypb.Empty{}, nil
+					}
+					t.Errorf("unexpected CreateTimeSeriesRequest\ngot(# of TimeSeries): %v", len(req.TimeSeries))
+					return nil, errors.New("unexpected CreateTimeSeriesRequest")
+				}
+			},
+		},
 	}
 
 	for _, tc := range tests {
