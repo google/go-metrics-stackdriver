@@ -15,8 +15,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -46,13 +48,38 @@ func main() {
 		projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	}
 
-	log.Printf("initializing sink")
+	log.Printf("initializing sink, project_id: %q", projectID)
 
 	// create sink
 	ss := stackdriver.NewSink(client, &stackdriver.Config{
 		ProjectID: projectID,
 		Location:  "us-east1-c",
 	})
+	cfg := metrics.DefaultConfig("go-metrics-stackdriver")
+	cfg.EnableHostname = false
+	metrics.NewGlobal(metrics.DefaultConfig("go-metrics-stackdriver"), ss)
+
+	// start listener
+	log.Printf("starting server")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		defer metrics.MeasureSince([]string{"handler"}, time.Now())
+		metrics.IncrCounter([]string{"requests"}, 1.0)
+		fmt.Fprintf(w, "Hello from go-metrics-stackdriver")
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	srv := http.Server{
+		Addr: ":" + port,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Printf("server error: %s", err)
+		}
+	}()
 
 	// capture ctrl+c
 	c := make(chan os.Signal, 1)
@@ -61,6 +88,7 @@ func main() {
 		<-c
 		log.Printf("ctrl+c detected... shutting down")
 		cancel()
+		srv.Shutdown(ctx)
 	}()
 
 	// generate data
