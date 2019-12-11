@@ -23,6 +23,7 @@ import (
 	"time"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3"
+	metrics "github.com/armon/go-metrics"
 	emptypb "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/api/option"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
@@ -278,6 +279,74 @@ func TestSample(t *testing.T) {
 	}
 }
 
+func TestExtract(t *testing.T) {
+	ss := newTestSink(0*time.Second, nil)
+	ss.extractor = func(key []string) ([]string, []metrics.Label, error) {
+		return key[:1], []metrics.Label{
+			{
+				Name:  "method",
+				Value: key[1],
+			},
+		}, nil
+	}
+
+	tests := []struct {
+		name     string
+		collect  func()
+		createFn func(*testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error)
+	}{
+		{
+			name: "histogram",
+			collect: func() {
+				ss.AddSample([]string{"foo", "bar"}, 5.0)
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					metric := req.TimeSeries[0].GetMetric()
+					if metric.GetType() == "custom.googleapis.com/go-metrics/foo" && metric.GetLabels()["method"] == "bar" && req.TimeSeries[0].Points[0].Value.GetDistributionValue().BucketCounts[0] == 1 {
+						return &emptypb.Empty{}, nil
+					}
+					t.Errorf("unexpected CreateTimeSeriesRequest\nwant: %s\ngot: %v", "bucket 0 count 1", req)
+					return nil, errors.New("unexpected CreateTimeSeriesRequest")
+				}
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			lis := bufconn.Listen(1024 * 1024)
+			serv := grpc.NewServer()
+			monitoringpb.RegisterMetricServiceServer(serv, &mockMetricServer{
+				createFn: tc.createFn(t),
+			})
+
+			go func() {
+				if err := serv.Serve(lis); err != nil {
+					t.Fatalf("server error: %v", err)
+				}
+			}()
+
+			conn, err := grpc.Dial(lis.Addr().String(), grpc.WithDialer(func(string, time.Duration) (net.Conn, error) { return lis.Dial() }), grpc.WithInsecure())
+			if err != nil {
+				t.Fatalf("failed to dial: %v", err)
+			}
+			defer conn.Close()
+			client, err := monitoring.NewMetricClient(ctx, option.WithGRPCConn(conn))
+			if err != nil {
+				t.Fatalf("failed to create MetricClient: %v", err)
+			}
+
+			ss.reset()
+			ss.client = client
+			tc.collect()
+			ss.report(ctx)
+		})
+	}
+}
+
 type mockMetricServer struct {
 	monitoringpb.MetricServiceServer
 
@@ -297,6 +366,7 @@ func newTestSink(interval time.Duration, client *monitoring.MetricClient) *Sink 
 	s.taskInfo = &taskInfo{}
 	s.interval = interval
 	s.bucketer = DefaultBucketer
+	s.extractor = DefaultLabelExtractor
 	s.reset()
 	go s.flushMetrics(context.Background())
 	return s
