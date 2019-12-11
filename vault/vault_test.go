@@ -1359,8 +1359,8 @@ func TestExtractor(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	c := &stackdriver.Config{
-		Extractor: Extractor,
-		Bucketer:  Bucketer,
+	_ = &stackdriver.Config{
+		LabelExtractor: Extractor,
+		Bucketer:       Bucketer,
 	}
 }
