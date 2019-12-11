@@ -627,7 +627,201 @@ func TestExtractor(t *testing.T) {
 			wantKey: []string{"vault", "wal_flushready"},
 		},
 		// https://www.vaultproject.io/docs/internals/telemetry.html#replication-metrics
-		// TODO
+		{
+			desc:    "logshipper.streamWALs.missing_guard",
+			in:      []string{"logshipper", "streamWALs", "missing_guard"},
+			wantKey: []string{"logshipper", "streamWALs", "missing_guard"},
+		},
+		{
+			desc:    "logshipper.streamWALs.guard_found",
+			in:      []string{"logshipper", "streamWALs", "guard_found"},
+			wantKey: []string{"logshipper", "streamWALs", "guard_found"},
+		},
+		{
+			desc:    "replication.fetchRemoteKeys",
+			in:      []string{"replication", "fetchRemoteKeys"},
+			wantKey: []string{"replication", "fetchRemoteKeys"},
+		},
+		{
+			desc:    "replication.merkleDiff",
+			in:      []string{"replication", "merkleDiff"},
+			wantKey: []string{"replication", "merkleDiff"},
+		},
+		{
+			desc:    "replication.merkleSync",
+			in:      []string{"replication", "merkleSync"},
+			wantKey: []string{"replication", "merkleSync"},
+		},
+		{
+			desc:    "replication.merkle.commit_index",
+			in:      []string{"replication", "merkle", "commit_index"},
+			wantKey: []string{"replication", "merkle", "commit_index"},
+		},
+		{
+			desc:    "replication.wal.last_wal",
+			in:      []string{"replication", "wal", "last_wal"},
+			wantKey: []string{"replication", "wal", "last_wal"},
+		},
+		{
+			desc:    "replication.wal.last_dr_wal",
+			in:      []string{"replication", "wal", "last_dr_wal"},
+			wantKey: []string{"replication", "wal", "last_dr_wal"},
+		},
+		{
+			desc:    "replication.wal.last_performance_wal",
+			in:      []string{"replication", "wal", "last_performance_wal"},
+			wantKey: []string{"replication", "wal", "last_performance_wal"},
+		},
+		{
+			desc:    "replication.fsm.last_remote_wal",
+			in:      []string{"replication", "fsm", "last_remote_wal"},
+			wantKey: []string{"replication", "fsm", "last_remote_wal"},
+		},
+		{
+			desc:    "replication.rpc.server.auth_request",
+			in:      []string{"replication", "rpc", "server", "auth_request"},
+			wantKey: []string{"replication", "rpc", "server", "auth_request"},
+		},
+		{
+			desc:    "replication.rpc.server.bootstrap_request",
+			in:      []string{"replication", "rpc", "server", "bootstrap_request"},
+			wantKey: []string{"replication", "rpc", "server", "bootstrap_request"},
+		},
+		{
+			desc:    "replication.rpc.server.conflicting_pages_request",
+			in:      []string{"replication", "rpc", "server", "conflicting_pages_request"},
+			wantKey: []string{"replication", "rpc", "server", "conflicting_pages_request"},
+		},
+		{
+			desc:    "replication.rpc.server.echo",
+			in:      []string{"replication", "rpc", "server", "echo"},
+			wantKey: []string{"replication", "rpc", "server", "echo"},
+		},
+		{
+			desc:    "replication.rpc.server.forwarding_request",
+			in:      []string{"replication", "rpc", "server", "forwarding_request"},
+			wantKey: []string{"replication", "rpc", "server", "forwarding_request"},
+		},
+		{
+			desc:    "replication.rpc.server.guard_hash_request",
+			in:      []string{"replication", "rpc", "server", "guard_hash_request"},
+			wantKey: []string{"replication", "rpc", "server", "guard_hash_request"},
+		},
+		{
+			desc:    "replication.rpc.server.persist_alias_request",
+			in:      []string{"replication", "rpc", "server", "persist_alias_request"},
+			wantKey: []string{"replication", "rpc", "server", "persist_alias_request"},
+		},
+		{
+			desc:    "replication.rpc.server.persist_persona_request",
+			in:      []string{"replication", "rpc", "server", "persist_persona_request"},
+			wantKey: []string{"replication", "rpc", "server", "persist_persona_request"},
+		},
+		{
+			desc:    "replication.rpc.server.stream_wals_request",
+			in:      []string{"replication", "rpc", "server", "stream_wals_request"},
+			wantKey: []string{"replication", "rpc", "server", "stream_wals_request"},
+		},
+		{
+			desc:    "replication.rpc.server.sub_page_hashes_request",
+			in:      []string{"replication", "rpc", "server", "sub_page_hashes_request"},
+			wantKey: []string{"replication", "rpc", "server", "sub_page_hashes_request"},
+		},
+		{
+			desc:    "replication.rpc.server.sync_counter_request",
+			in:      []string{"replication", "rpc", "server", "sync_counter_request"},
+			wantKey: []string{"replication", "rpc", "server", "sync_counter_request"},
+		},
+		{
+			desc:    "replication.rpc.server.upsert_group_request",
+			in:      []string{"replication", "rpc", "server", "upsert_group_request"},
+			wantKey: []string{"replication", "rpc", "server", "upsert_group_request"},
+		},
+		{
+			desc:    "replication.rpc.client.conflicting_pages",
+			in:      []string{"replication", "rpc", "client", "conflicting_pages"},
+			wantKey: []string{"replication", "rpc", "client", "conflicting_pages"},
+		},
+		{
+			desc:    "replication.rpc.client.fetch_keys",
+			in:      []string{"replication", "rpc", "client", "fetch_keys"},
+			wantKey: []string{"replication", "rpc", "client", "fetch_keys"},
+		},
+		{
+			desc:    "replication.rpc.client.forward",
+			in:      []string{"replication", "rpc", "client", "forward"},
+			wantKey: []string{"replication", "rpc", "client", "forward"},
+		},
+		{
+			desc:    "replication.rpc.client.guard_hash",
+			in:      []string{"replication", "rpc", "client", "guard_hash"},
+			wantKey: []string{"replication", "rpc", "client", "guard_hash"},
+		},
+		{
+			desc:    "replication.rpc.client.persist_alias",
+			in:      []string{"replication", "rpc", "client", "persist_alias"},
+			wantKey: []string{"replication", "rpc", "client", "persist_alias"},
+		},
+		{
+			desc:    "replication.rpc.client.register_auth",
+			in:      []string{"replication", "rpc", "client", "register_auth"},
+			wantKey: []string{"replication", "rpc", "client", "register_auth"},
+		},
+		{
+			desc:    "replication.rpc.client.register_lease",
+			in:      []string{"replication", "rpc", "client", "register_lease"},
+			wantKey: []string{"replication", "rpc", "client", "register_lease"},
+		},
+		{
+			desc:    "replication.rpc.client.stream_wals",
+			in:      []string{"replication", "rpc", "client", "stream_wals"},
+			wantKey: []string{"replication", "rpc", "client", "stream_wals"},
+		},
+		{
+			desc:    "replication.rpc.client.sub_page_hashes",
+			in:      []string{"replication", "rpc", "client", "sub_page_hashes"},
+			wantKey: []string{"replication", "rpc", "client", "sub_page_hashes"},
+		},
+		{
+			desc:    "replication.rpc.client.sync_counter",
+			in:      []string{"replication", "rpc", "client", "sync_counter"},
+			wantKey: []string{"replication", "rpc", "client", "sync_counter"},
+		},
+		{
+			desc:    "replication.rpc.client.upsert_group",
+			in:      []string{"replication", "rpc", "client", "upsert_group"},
+			wantKey: []string{"replication", "rpc", "client", "upsert_group"},
+		},
+		{
+			desc:    "replication.rpc.dr.server.echo",
+			in:      []string{"replication", "rpc", "dr", "server", "echo"},
+			wantKey: []string{"replication", "rpc", "dr", "server", "echo"},
+		},
+		{
+			desc:    "replication.rpc.dr.server.fetch_keys_request",
+			in:      []string{"replication", "rpc", "dr", "server", "fetch_keys_request"},
+			wantKey: []string{"replication", "rpc", "dr", "server", "fetch_keys_request"},
+		},
+		{
+			desc:    "replication.rpc.standby.server.echo",
+			in:      []string{"replication", "rpc", "standby", "server", "echo"},
+			wantKey: []string{"replication", "rpc", "standby", "server", "echo"},
+		},
+		{
+			desc:    "replication.rpc.standby.server.register_auth_request",
+			in:      []string{"replication", "rpc", "standby", "server", "register_auth_request"},
+			wantKey: []string{"replication", "rpc", "standby", "server", "register_auth_request"},
+		},
+		{
+			desc:    "replication.rpc.standby.server.register_lease_request",
+			in:      []string{"replication", "rpc", "standby", "server", "register_lease_request"},
+			wantKey: []string{"replication", "rpc", "standby", "server", "register_lease_request"},
+		},
+		{
+			desc:    "replication.rpc.standby.server.wrap_token_request",
+			in:      []string{"replication", "rpc", "standby", "server", "wrap_token_request"},
+			wantKey: []string{"replication", "rpc", "standby", "server", "wrap_token_request"},
+		},
 		// https://www.vaultproject.io/docs/internals/telemetry.html#secrets-engines-metrics
 		{
 			desc:    "database.Initialize",
