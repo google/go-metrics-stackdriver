@@ -21,7 +21,7 @@ import "github.com/armon/go-metrics"
 // Extractor extracts known patterns from the key into metrics.Label for better metric grouping
 // and to help avoid the limit of 500 custom metric descriptors per project
 // (https://cloud.google.com/monitoring/quotas).
-func Extractor(key []string) ([]string, []metrics.Label) {
+func Extractor(key []string) ([]string, []metrics.Label, error) {
 	// Metrics documented at https://www.vaultproject.io/docs/internals/telemetry.html should be
 	// extracted here into a base metric name with appropriate labels extracted from the 'key'.
 	switch len(key) {
@@ -33,7 +33,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[1],
 				},
-			}
+			}, nil
 		}
 	case 3: // metrics of format: *.*.*
 		// vault.barrier.<method>
@@ -45,7 +45,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[2],
 				},
-			}
+			}, nil
 		}
 		// vault.<backend>.<method>
 		if key[0] == "vault" && (key[2] == "put" || key[2] == "get" || key[2] == "delete" || key[2] == "list") {
@@ -54,7 +54,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[2],
 				},
-			}
+			}, nil
 		}
 		// database.<name>.<method>
 		// note: there are database.<method>.error counters. Those are handled separately.
@@ -68,8 +68,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[2],
 				},
-			}
-
+			}, nil
 		}
 		// database.<method>.error
 		if key[0] == "database" && key[2] == "error" {
@@ -78,7 +77,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[1],
 				},
-			}
+			}, nil
 		}
 	case 4: // metrics of format: *.*.*.*
 		// vault.route.<method>.<mount>
@@ -92,17 +91,17 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "mount",
 					Value: key[3],
 				},
-			}
-    }
-    // vault.audit.<type>.*
-    if key[0] == "vault" && key[1] == "audit" {
+			}, nil
+		}
+		// vault.audit.<type>.*
+		if key[0] == "vault" && key[1] == "audit" {
 			return []string{"vault", "audit", key[3]}, []metrics.Label{
 				{
 					Name:  "type",
 					Value: key[2],
 				},
-			}
-    }
+			}, nil
+		}
 		// vault.rollback.attempt.<mount>
 		if key[0] == "vault" && key[1] == "rollback" && key[2] == "attempt" {
 			return key[:3], []metrics.Label{
@@ -110,7 +109,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "mount",
 					Value: key[3],
 				},
-			}
+			}, nil
 		}
 		// vault.<backend>.lock.<method>
 		if key[0] == "vault" && key[2] == "lock" {
@@ -119,7 +118,7 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[3],
 				},
-			}
+			}, nil
 		}
 		// database.<name>.<method>.error
 		if key[0] == "database" && key[3] == "error" {
@@ -132,10 +131,10 @@ func Extractor(key []string) ([]string, []metrics.Label) {
 					Name:  "method",
 					Value: key[2],
 				},
-			}
+			}, nil
 		}
 	default:
 		// unknown key pattern, keep it as-is.
 	}
-	return key, nil
+	return key, nil, nil
 }

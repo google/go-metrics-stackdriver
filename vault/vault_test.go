@@ -27,116 +27,116 @@ func TestExtractor(t *testing.T) {
 		wantKey    []string
 		wantLabels []metrics.Label
 	}{
-    // https://www.vaultproject.io/docs/internals/telemetry.html#audit-metrics
-    {
+		// https://www.vaultproject.io/docs/internals/telemetry.html#audit-metrics
+		{
 			desc:    "vault.audit.log_request",
 			in:      []string{"vault", "audit", "log_request"},
 			wantKey: []string{"vault", "audit", "log_request"},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.log_response",
 			in:      []string{"vault", "audit", "log_response"},
 			wantKey: []string{"vault", "audit", "log_response"},
-    },
-      {
+		},
+		{
 			desc:    "vault.audit.log_request_failure",
 			in:      []string{"vault", "audit", "log_request_failure"},
 			wantKey: []string{"vault", "audit", "log_request_failure"},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.log_response_failure",
 			in:      []string{"vault", "audit", "log_response_failure"},
 			wantKey: []string{"vault", "audit", "log_response_failure"},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.file.log_request",
 			in:      []string{"vault", "audit", "file", "log_request"},
-      wantKey: []string{"vault", "audit", "log_request"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_request"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "file",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.file.log_response",
 			in:      []string{"vault", "audit", "file", "log_response"},
-      wantKey: []string{"vault", "audit", "log_response"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_response"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "file",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.file.log_request_failure",
 			in:      []string{"vault", "audit", "file", "log_request_failure"},
-      wantKey: []string{"vault", "audit", "log_request_failure"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_request_failure"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "file",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.file.log_response_failure",
 			in:      []string{"vault", "audit", "file", "log_response_failure"},
-      wantKey: []string{"vault", "audit", "log_response_failure"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_response_failure"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "file",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.syslog.log_request",
 			in:      []string{"vault", "audit", "syslog", "log_request"},
-      wantKey: []string{"vault", "audit", "log_request"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_request"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "syslog",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.syslog.log_response",
 			in:      []string{"vault", "audit", "syslog", "log_response"},
-      wantKey: []string{"vault", "audit", "log_response"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_response"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "syslog",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.syslog.log_request_failure",
 			in:      []string{"vault", "audit", "syslog", "log_request_failure"},
-      wantKey: []string{"vault", "audit", "log_request_failure"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_request_failure"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "syslog",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.audit.syslog.log_response_failure",
 			in:      []string{"vault", "audit", "syslog", "log_response_failure"},
-      wantKey: []string{"vault", "audit", "log_response_failure"},
-      wantLabels: []metrics.Label{
+			wantKey: []string{"vault", "audit", "log_response_failure"},
+			wantLabels: []metrics.Label{
 				{
 					Name:  "type",
 					Value: "syslog",
 				},
 			},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#core-metrics
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#core-metrics
 		{
 			desc:    "vault.barrier.get",
 			in:      []string{"vault", "barrier", "get"},
@@ -147,7 +147,7 @@ func TestExtractor(t *testing.T) {
 					Value: "get",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.barrier.put",
 			in:      []string{"vault", "barrier", "put"},
@@ -158,7 +158,7 @@ func TestExtractor(t *testing.T) {
 					Value: "put",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.barrier.delete",
 			in:      []string{"vault", "barrier", "delete"},
@@ -169,7 +169,7 @@ func TestExtractor(t *testing.T) {
 					Value: "delete",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.barrier.list",
 			in:      []string{"vault", "barrier", "list"},
@@ -180,169 +180,169 @@ func TestExtractor(t *testing.T) {
 					Value: "list",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.check_token",
 			in:      []string{"vault", "core", "check_token"},
 			wantKey: []string{"vault", "core", "check_token"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.fetch_acl_and_token",
 			in:      []string{"vault", "core", "fetch_acl_and_token"},
 			wantKey: []string{"vault", "core", "fetch_acl_and_token"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.handle_request",
 			in:      []string{"vault", "core", "handle_request"},
 			wantKey: []string{"vault", "core", "handle_request"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.handle_login_request",
 			in:      []string{"vault", "core", "handle_login_request"},
 			wantKey: []string{"vault", "core", "handle_login_request"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.leadership_setup_failed",
 			in:      []string{"vault", "core", "leadership_setup_failed"},
 			wantKey: []string{"vault", "core", "leadership_setup_failed"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.leadership_lost",
 			in:      []string{"vault", "core", "leadership_lost"},
 			wantKey: []string{"vault", "core", "leadership_lost"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.post_unseal",
 			in:      []string{"vault", "core", "post_unseal"},
 			wantKey: []string{"vault", "core", "post_unseal"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.pre_seal",
 			in:      []string{"vault", "core", "pre_seal"},
 			wantKey: []string{"vault", "core", "pre_seal"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.seal-with-request",
 			in:      []string{"vault", "core", "seal-with-request"},
 			wantKey: []string{"vault", "core", "seal-with-request"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.seal",
 			in:      []string{"vault", "core", "seal"},
 			wantKey: []string{"vault", "core", "seal"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.seal-internal",
 			in:      []string{"vault", "core", "seal-internal"},
 			wantKey: []string{"vault", "core", "seal-internal"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.step_down",
 			in:      []string{"vault", "core", "step_down"},
 			wantKey: []string{"vault", "core", "step_down"},
-    },
-    {
+		},
+		{
 			desc:    "vault.core.unseal",
 			in:      []string{"vault", "core", "unseal"},
 			wantKey: []string{"vault", "core", "unseal"},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#runtime-metrics
-    {
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#runtime-metrics
+		{
 			desc:    "vault.runtime.alloc_bytes",
 			in:      []string{"vault", "runtime", "alloc_bytes"},
 			wantKey: []string{"vault", "runtime", "alloc_bytes"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.free_count",
 			in:      []string{"vault", "runtime", "free_count"},
 			wantKey: []string{"vault", "runtime", "free_count"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.heap_objects",
 			in:      []string{"vault", "runtime", "heap_objects"},
 			wantKey: []string{"vault", "runtime", "heap_objects"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.malloc_count",
 			in:      []string{"vault", "runtime", "malloc_count"},
 			wantKey: []string{"vault", "runtime", "malloc_count"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.num_goroutines",
 			in:      []string{"vault", "runtime", "num_goroutines"},
 			wantKey: []string{"vault", "runtime", "num_goroutines"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.sys_bytes",
 			in:      []string{"vault", "runtime", "sys_bytes"},
 			wantKey: []string{"vault", "runtime", "sys_bytes"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.total_gc_pause_ns",
 			in:      []string{"vault", "runtime", "total_gc_pause_ns"},
 			wantKey: []string{"vault", "runtime", "total_gc_pause_ns"},
-    },
-    {
+		},
+		{
 			desc:    "vault.runtime.total_gc_runs",
 			in:      []string{"vault", "runtime", "total_gc_runs"},
 			wantKey: []string{"vault", "runtime", "total_gc_runs"},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#policy-and-token-metrics
-    {
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#policy-and-token-metrics
+		{
 			desc:    "vault.expire.fetch-lease-times",
 			in:      []string{"vault", "expire", "fetch-lease-times"},
 			wantKey: []string{"vault", "expire", "fetch-lease-times"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.fetch-lease-times-by-token",
 			in:      []string{"vault", "expire", "fetch-lease-times-by-token"},
 			wantKey: []string{"vault", "expire", "fetch-lease-times-by-token"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.num_leases",
 			in:      []string{"vault", "expire", "num_leases"},
 			wantKey: []string{"vault", "expire", "num_leases"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.revoke",
 			in:      []string{"vault", "expire", "revoke"},
 			wantKey: []string{"vault", "expire", "revoke"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.revoke-force",
 			in:      []string{"vault", "expire", "revoke-force"},
 			wantKey: []string{"vault", "expire", "revoke-force"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.revoke-prefix",
 			in:      []string{"vault", "expire", "revoke-prefix"},
 			wantKey: []string{"vault", "expire", "revoke-prefix"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.revoke-by-token",
 			in:      []string{"vault", "expire", "revoke-by-token"},
 			wantKey: []string{"vault", "expire", "revoke-by-token"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.renew",
 			in:      []string{"vault", "expire", "renew"},
 			wantKey: []string{"vault", "expire", "renew"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.renew-token",
 			in:      []string{"vault", "expire", "renew-token"},
 			wantKey: []string{"vault", "expire", "renew-token"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.register",
 			in:      []string{"vault", "expire", "register"},
 			wantKey: []string{"vault", "expire", "register"},
-    },
-    {
+		},
+		{
 			desc:    "vault.expire.register-auth",
 			in:      []string{"vault", "expire", "register-auth"},
 			wantKey: []string{"vault", "expire", "register-auth"},
-    },
+		},
 		{
 			desc:    "vault.policy.get_policy",
 			in:      []string{"vault", "policy", "get_policy"},
@@ -353,7 +353,7 @@ func TestExtractor(t *testing.T) {
 					Value: "get_policy",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.policy.list_policy",
 			in:      []string{"vault", "policy", "list_policy"},
@@ -364,7 +364,7 @@ func TestExtractor(t *testing.T) {
 					Value: "list_policy",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.policy.delete_policy",
 			in:      []string{"vault", "policy", "delete_policy"},
@@ -375,7 +375,7 @@ func TestExtractor(t *testing.T) {
 					Value: "delete_policy",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.policy.set_policy",
 			in:      []string{"vault", "policy", "set_policy"},
@@ -397,7 +397,7 @@ func TestExtractor(t *testing.T) {
 					Value: "create",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.token.createAccessor",
 			in:      []string{"vault", "token", "createAccessor"},
@@ -408,7 +408,7 @@ func TestExtractor(t *testing.T) {
 					Value: "createAccessor",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.token.lookup",
 			in:      []string{"vault", "token", "lookup"},
@@ -419,7 +419,7 @@ func TestExtractor(t *testing.T) {
 					Value: "lookup",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.token.revoke",
 			in:      []string{"vault", "token", "revoke"},
@@ -430,7 +430,7 @@ func TestExtractor(t *testing.T) {
 					Value: "revoke",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.token.revoke-tree",
 			in:      []string{"vault", "token", "revoke-tree"},
@@ -441,7 +441,7 @@ func TestExtractor(t *testing.T) {
 					Value: "revoke-tree",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.token.store",
 			in:      []string{"vault", "token", "store"},
@@ -452,9 +452,9 @@ func TestExtractor(t *testing.T) {
 					Value: "store",
 				},
 			},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#auth-methods-metrics
-    {
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#auth-methods-metrics
+		{
 			desc:    "vault.rollback.attempt.auth-token",
 			in:      []string{"vault", "rollback", "attempt", "auth-token"},
 			wantKey: []string{"vault", "rollback", "attempt"},
@@ -464,8 +464,8 @@ func TestExtractor(t *testing.T) {
 					Value: "auth-token",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.rollback.attempt.auth-ldap",
 			in:      []string{"vault", "rollback", "attempt", "auth-ldap"},
 			wantKey: []string{"vault", "rollback", "attempt"},
@@ -475,8 +475,8 @@ func TestExtractor(t *testing.T) {
 					Value: "auth-ldap",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.rollback.attempt.cubbyhole",
 			in:      []string{"vault", "rollback", "attempt", "cubbyhole"},
 			wantKey: []string{"vault", "rollback", "attempt"},
@@ -486,8 +486,8 @@ func TestExtractor(t *testing.T) {
 					Value: "cubbyhole",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.rollback.attempt.secret",
 			in:      []string{"vault", "rollback", "attempt", "secret"},
 			wantKey: []string{"vault", "rollback", "attempt"},
@@ -497,8 +497,8 @@ func TestExtractor(t *testing.T) {
 					Value: "secret",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.rollback.attempt.sys",
 			in:      []string{"vault", "rollback", "attempt", "sys"},
 			wantKey: []string{"vault", "rollback", "attempt"},
@@ -508,7 +508,7 @@ func TestExtractor(t *testing.T) {
 					Value: "sys",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.rollback.auth-token",
 			in:      []string{"vault", "route", "rollback", "auth-token"},
@@ -523,7 +523,7 @@ func TestExtractor(t *testing.T) {
 					Value: "auth-token",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.rollback.auth-ldap",
 			in:      []string{"vault", "route", "rollback", "auth-ldap"},
@@ -538,7 +538,7 @@ func TestExtractor(t *testing.T) {
 					Value: "auth-ldap",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.rollback.cubbyhole",
 			in:      []string{"vault", "route", "rollback", "cubbyhole"},
@@ -553,7 +553,7 @@ func TestExtractor(t *testing.T) {
 					Value: "cubbyhole",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.rollback.secret",
 			in:      []string{"vault", "route", "rollback", "secret"},
@@ -568,7 +568,7 @@ func TestExtractor(t *testing.T) {
 					Value: "secret",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.rollback.sys",
 			in:      []string{"vault", "route", "rollback", "sys"},
@@ -583,51 +583,51 @@ func TestExtractor(t *testing.T) {
 					Value: "sys",
 				},
 			},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#merkle-tree-and-write-ahead-log-metrics
-    {
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#merkle-tree-and-write-ahead-log-metrics
+		{
 			desc:    "vault.merkle_flushdirty",
 			in:      []string{"vault", "merkle_flushdirty"},
 			wantKey: []string{"vault", "merkle_flushdirty"},
-    },
-    {
+		},
+		{
 			desc:    "vault.merkle_savecheckpoint",
 			in:      []string{"vault", "merkle_savecheckpoint"},
 			wantKey: []string{"vault", "merkle_savecheckpoint"},
-    },
-    {
+		},
+		{
 			desc:    "vault.wal_deletewals",
 			in:      []string{"vault", "wal_deletewals"},
 			wantKey: []string{"vault", "wal_deletewals"},
-    },
-    {
+		},
+		{
 			desc:    "vault.wal_gc_deleted",
 			in:      []string{"vault", "wal_gc_deleted"},
 			wantKey: []string{"vault", "wal_gc_deleted"},
-    },
-    {
+		},
+		{
 			desc:    "vault.wal_gc_total",
 			in:      []string{"vault", "wal_gc_total"},
 			wantKey: []string{"vault", "wal_gc_total"},
-    },
-    {
+		},
+		{
 			desc:    "vault.wal_loadWAL",
 			in:      []string{"vault", "wal_loadWAL"},
 			wantKey: []string{"vault", "wal_loadWAL"},
-    },
-    {
+		},
+		{
 			desc:    "vault.wal_persistwals",
 			in:      []string{"vault", "wal_persistwals"},
 			wantKey: []string{"vault", "wal_persistwals"},
-    },
-    {
+		},
+		{
 			desc:    "vault.wal_flushready",
 			in:      []string{"vault", "wal_flushready"},
 			wantKey: []string{"vault", "wal_flushready"},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#replication-metrics
-    // TODO
-    // https://www.vaultproject.io/docs/internals/telemetry.html#secrets-engines-metrics
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#replication-metrics
+		// TODO
+		// https://www.vaultproject.io/docs/internals/telemetry.html#secrets-engines-metrics
 		{
 			desc:    "database.Initialize",
 			in:      []string{"database", "Initialize"},
@@ -679,8 +679,8 @@ func TestExtractor(t *testing.T) {
 					Value: "Initialize",
 				},
 			},
-    },
-    		{
+		},
+		{
 			desc:    "database.Close",
 			in:      []string{"database", "Close"},
 			wantKey: []string{"database"},
@@ -731,7 +731,7 @@ func TestExtractor(t *testing.T) {
 					Value: "Close",
 				},
 			},
-    },
+		},
 		{
 			desc:    "database.CreateUser",
 			in:      []string{"database", "CreateUser"},
@@ -783,7 +783,7 @@ func TestExtractor(t *testing.T) {
 					Value: "CreateUser",
 				},
 			},
-    },
+		},
 		{
 			desc:    "database.RenewUser",
 			in:      []string{"database", "RenewUser"},
@@ -835,7 +835,7 @@ func TestExtractor(t *testing.T) {
 					Value: "RenewUser",
 				},
 			},
-    },
+		},
 		{
 			desc:    "database.RevokeUser",
 			in:      []string{"database", "RevokeUser"},
@@ -887,8 +887,8 @@ func TestExtractor(t *testing.T) {
 					Value: "RevokeUser",
 				},
 			},
-    },
-    // https://www.vaultproject.io/docs/internals/telemetry.html#storage-backend-metrics
+		},
+		// https://www.vaultproject.io/docs/internals/telemetry.html#storage-backend-metrics
 		{
 			desc:    "vault.consul.put",
 			in:      []string{"vault", "consul", "put"},
@@ -899,7 +899,7 @@ func TestExtractor(t *testing.T) {
 					Value: "put",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.consul.get",
 			in:      []string{"vault", "consul", "get"},
@@ -910,8 +910,8 @@ func TestExtractor(t *testing.T) {
 					Value: "get",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.consul.delete",
 			in:      []string{"vault", "consul", "delete"},
 			wantKey: []string{"vault", "consul"},
@@ -921,8 +921,8 @@ func TestExtractor(t *testing.T) {
 					Value: "delete",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.consul.list",
 			in:      []string{"vault", "consul", "list"},
 			wantKey: []string{"vault", "consul"},
@@ -932,8 +932,8 @@ func TestExtractor(t *testing.T) {
 					Value: "list",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.gcs.put",
 			in:      []string{"vault", "gcs", "put"},
 			wantKey: []string{"vault", "gcs"},
@@ -943,7 +943,7 @@ func TestExtractor(t *testing.T) {
 					Value: "put",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.gcs.get",
 			in:      []string{"vault", "gcs", "get"},
@@ -954,8 +954,8 @@ func TestExtractor(t *testing.T) {
 					Value: "get",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.gcs.delete",
 			in:      []string{"vault", "gcs", "delete"},
 			wantKey: []string{"vault", "gcs"},
@@ -965,8 +965,8 @@ func TestExtractor(t *testing.T) {
 					Value: "delete",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.gcs.list",
 			in:      []string{"vault", "gcs", "list"},
 			wantKey: []string{"vault", "gcs"},
@@ -1009,8 +1009,8 @@ func TestExtractor(t *testing.T) {
 					Value: "value",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.spanner.put",
 			in:      []string{"vault", "spanner", "put"},
 			wantKey: []string{"vault", "spanner"},
@@ -1020,7 +1020,7 @@ func TestExtractor(t *testing.T) {
 					Value: "put",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.spanner.get",
 			in:      []string{"vault", "spanner", "get"},
@@ -1031,8 +1031,8 @@ func TestExtractor(t *testing.T) {
 					Value: "get",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.spanner.delete",
 			in:      []string{"vault", "spanner", "delete"},
 			wantKey: []string{"vault", "spanner"},
@@ -1042,8 +1042,8 @@ func TestExtractor(t *testing.T) {
 					Value: "delete",
 				},
 			},
-    },
-    {
+		},
+		{
 			desc:    "vault.spanner.list",
 			in:      []string{"vault", "spanner", "list"},
 			wantKey: []string{"vault", "spanner"},
@@ -1086,8 +1086,8 @@ func TestExtractor(t *testing.T) {
 					Value: "value",
 				},
 			},
-    },
-    // EXTRA UNDOCUMENTED
+		},
+		// EXTRA UNDOCUMENTED
 		{
 			desc:    "vault.route.create.kv-",
 			in:      []string{"vault", "route", "create", "kv-"},
@@ -1102,7 +1102,7 @@ func TestExtractor(t *testing.T) {
 					Value: "kv-",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.update.kv-",
 			in:      []string{"vault", "route", "update", "kv-"},
@@ -1117,7 +1117,7 @@ func TestExtractor(t *testing.T) {
 					Value: "kv-",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.read.kv-",
 			in:      []string{"vault", "route", "read", "kv-"},
@@ -1132,7 +1132,7 @@ func TestExtractor(t *testing.T) {
 					Value: "kv-",
 				},
 			},
-    },
+		},
 		{
 			desc:    "vault.route.delete.kv-",
 			in:      []string{"vault", "route", "delete", "kv-"},
@@ -1147,12 +1147,12 @@ func TestExtractor(t *testing.T) {
 					Value: "kv-",
 				},
 			},
-    },
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			key, labels := Extractor(tc.in)
+			key, labels, _ := Extractor(tc.in)
 			if diff := cmp.Diff(tc.wantKey, key); diff != "" {
 				t.Errorf("Extractor(%s) mismatch key (-want +got):\n%s", tc.in, diff)
 			}

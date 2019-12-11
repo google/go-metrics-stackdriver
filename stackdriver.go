@@ -66,7 +66,7 @@ type Config struct {
 	// The label extractor provides a way to rewrite metric key into a new key
 	// with multiple labels. This is useful if the instrumented code includes
 	// variable parameters within a metric name.
-	// Optional. Defaults to DefaultExtractLabelsFn.
+	// Optional. Defaults to DefaultLabelExtractor.
 	LabelExtractor ExtractLabelsFn
 	// The bucketer is used to determine histogram bucket boundaries
 	// for the sampled metrics. This will execute before the LabelExtractor.
@@ -109,8 +109,9 @@ type taskInfo struct {
 type BucketFn func([]string) []float64
 
 // ExtractLabelsFn converts a given metric name into a new metric name and
-// optionally additional labels.
-type ExtractLabelsFn func([]string) ([]string, []metrics.Label)
+// optionally additional labels. Errors will prevent the metric from writing
+// to stackdriver.
+type ExtractLabelsFn func([]string) ([]string, []metrics.Label, error)
 
 // DefaultBucketer is the default BucketFn used to determing bucketing values
 // for metrics.
@@ -118,10 +119,10 @@ func DefaultBucketer(key []string) []float64 {
 	return []float64{10.0, 25.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0, 1000.0, 1500.0, 2000.0, 3000.0, 4000.0, 5000.0}
 }
 
-// DefaultLabelExtractor is the default ExtractLabelsFn that is a direct
+// DefaultLabelExtractor is the default ExtractLabelsFn and is a direct
 // passthrough.
-func DefaultLabelExtractor(key []string) ([]string, []metrics.Label) {
-	return key, nil
+func DefaultLabelExtractor(key []string) ([]string, []metrics.Label, error) {
+	return key, nil, nil
 }
 
 // NewSink creates a Sink to flush metrics to stackdriver every interval. The
@@ -269,7 +270,11 @@ func (s *Sink) report(ctx context.Context) {
 	ts := []*monitoringpb.TimeSeries{}
 
 	for _, v := range rCounters {
-		name, labels := v.name.labelMap(s.extractor)
+		name, labels, err := v.name.labelMap(s.extractor)
+		if err != nil {
+			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
+			continue
+		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
 				Type:   path.Join("custom.googleapis.com", "go-metrics", name),
@@ -295,7 +300,11 @@ func (s *Sink) report(ctx context.Context) {
 	}
 
 	for _, v := range rGauges {
-		name, labels := v.name.labelMap(s.extractor)
+		name, labels, err := v.name.labelMap(s.extractor)
+		if err != nil {
+			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
+			continue
+		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
 				Type:   path.Join("custom.googleapis.com", "go-metrics", name),
@@ -321,7 +330,11 @@ func (s *Sink) report(ctx context.Context) {
 	}
 
 	for _, v := range rHistograms {
-		name, labels := v.name.labelMap(s.extractor)
+		name, labels, err := v.name.labelMap(s.extractor)
+		if err != nil {
+			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
+			continue
+		}
 		var count int64
 		count = 0
 		for _, i := range v.counts {
@@ -482,9 +495,13 @@ func newSeries(key []string, labels []metrics.Label) *series {
 	}
 }
 
-func (s *series) labelMap(extractor ExtractLabelsFn) (string, map[string]string) {
+func (s *series) labelMap(extractor ExtractLabelsFn) (string, map[string]string, error) {
 	// extract labels from the key
-	key, extractedLabels := extractor(s.key)
+	key, extractedLabels, err := extractor(s.key)
+	if err != nil {
+		return "", nil, err
+	}
+
 	name := strings.Join(key, "_")
 	name = forbiddenChars.ReplaceAllString(name, "_")
 
@@ -495,7 +512,7 @@ func (s *series) labelMap(extractor ExtractLabelsFn) (string, map[string]string)
 	for _, v := range extractedLabels {
 		o[v.Name] = v.Value
 	}
-	return name, o
+	return name, o, nil
 }
 
 // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#point

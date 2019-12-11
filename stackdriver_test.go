@@ -281,13 +281,13 @@ func TestSample(t *testing.T) {
 
 func TestExtract(t *testing.T) {
 	ss := newTestSink(0*time.Second, nil)
-	ss.extractor = func(key []string) ([]string, []metrics.Label) {
+	ss.extractor = func(key []string) ([]string, []metrics.Label, error) {
 		return key[:1], []metrics.Label{
 			{
 				Name:  "method",
 				Value: key[1],
 			},
-		}
+		}, nil
 	}
 
 	tests := []struct {
