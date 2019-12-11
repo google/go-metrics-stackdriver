@@ -138,3 +138,11 @@ func Extractor(key []string) ([]string, []metrics.Label, error) {
 	}
 	return key, nil, nil
 }
+
+// Bucketer specifies the bucket boundaries that should be used for the given metric key.
+func Bucketer(key []string) []float64 {
+  // These were chosen to give some reasonable boundaires for RPC times in the 10-100ms range and
+  // then rough values for 1-5 seconds.
+  // TODO: investigate better boundaires for different metrics.
+  return []float64{10.0, 25.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0, 1000.0, 1500.0, 2000.0, 3000.0, 4000.0, 5000.0}
+}

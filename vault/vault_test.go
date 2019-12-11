@@ -18,6 +18,7 @@ import (
 
 	"github.com/armon/go-metrics"
 	"github.com/google/go-cmp/cmp"
+	stackdriver "github.com/google/go-metrics-stackdriver"
 )
 
 func TestExtractor(t *testing.T) {
@@ -1160,5 +1161,12 @@ func TestExtractor(t *testing.T) {
 				t.Errorf("Extractor(%s) mismatch labels (-want +got):\n%s", tc.in, diff)
 			}
 		})
+	}
+}
+
+func TestConfig(t *testing.T) {
+	c := &stackdriver.Config{
+		Extractor: Extractor,
+		Bucketer:  Bucketer,
 	}
 }
