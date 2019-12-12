@@ -824,9 +824,9 @@ func TestExtractor(t *testing.T) {
 		},
 		// https://www.vaultproject.io/docs/internals/telemetry.html#secrets-engines-metrics
 		{
-			desc:    "database.Initialize",
-			in:      []string{"database", "Initialize"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.Initialize",
+			in:      []string{"vault", "database", "Initialize"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -835,9 +835,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.Initialize.error",
-			in:      []string{"database", "Initialize", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.Initialize.error",
+			in:      []string{"vault", "database", "Initialize", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -846,24 +846,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.Initialize",
-			in:      []string{"database", "foo", "Initialize"},
-			wantKey: []string{"database"},
-			wantLabels: []metrics.Label{
-				{
-					Name:  "name",
-					Value: "foo",
-				},
-				{
-					Name:  "method",
-					Value: "Initialize",
-				},
-			},
-		},
-		{
-			desc:    "database.foo.Initialize.error",
-			in:      []string{"database", "foo", "Initialize", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.foo.Initialize",
+			in:      []string{"vault", "database", "foo", "Initialize"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",
@@ -876,9 +861,24 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.Close",
-			in:      []string{"database", "Close"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.foo.Initialize.error",
+			in:      []string{"vault", "database", "foo", "Initialize", "error"},
+			wantKey: []string{"vault", "database", "error"},
+			wantLabels: []metrics.Label{
+				{
+					Name:  "name",
+					Value: "foo",
+				},
+				{
+					Name:  "method",
+					Value: "Initialize",
+				},
+			},
+		},
+		{
+			desc:    "vault.database.Close",
+			in:      []string{"vault", "database", "Close"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -887,9 +887,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.Close.error",
-			in:      []string{"database", "Close", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.Close.error",
+			in:      []string{"vault", "database", "Close", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -898,24 +898,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.Close",
-			in:      []string{"database", "foo", "Close"},
-			wantKey: []string{"database"},
-			wantLabels: []metrics.Label{
-				{
-					Name:  "name",
-					Value: "foo",
-				},
-				{
-					Name:  "method",
-					Value: "Close",
-				},
-			},
-		},
-		{
-			desc:    "database.foo.Close.error",
-			in:      []string{"database", "foo", "Close", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.foo.Close",
+			in:      []string{"vault", "database", "foo", "Close"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",
@@ -928,9 +913,24 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.CreateUser",
-			in:      []string{"database", "CreateUser"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.foo.Close.error",
+			in:      []string{"vault", "database", "foo", "Close", "error"},
+			wantKey: []string{"vault", "database", "error"},
+			wantLabels: []metrics.Label{
+				{
+					Name:  "name",
+					Value: "foo",
+				},
+				{
+					Name:  "method",
+					Value: "Close",
+				},
+			},
+		},
+		{
+			desc:    "vault.database.CreateUser",
+			in:      []string{"vault", "database", "CreateUser"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -939,9 +939,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.CreateUser.error",
-			in:      []string{"database", "CreateUser", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.CreateUser.error",
+			in:      []string{"vault", "database", "CreateUser", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -950,9 +950,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.CreateUser",
-			in:      []string{"database", "foo", "CreateUser"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.foo.CreateUser",
+			in:      []string{"vault", "database", "foo", "CreateUser"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",
@@ -965,9 +965,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.CreateUser.error",
-			in:      []string{"database", "foo", "CreateUser", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.foo.CreateUser.error",
+			in:      []string{"vault", "database", "foo", "CreateUser", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",
@@ -980,9 +980,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.RenewUser",
-			in:      []string{"database", "RenewUser"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.RenewUser",
+			in:      []string{"vault", "database", "RenewUser"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -991,9 +991,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.RenewUser.error",
-			in:      []string{"database", "RenewUser", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.RenewUser.error",
+			in:      []string{"vault", "database", "RenewUser", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -1002,24 +1002,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.RenewUser",
-			in:      []string{"database", "foo", "RenewUser"},
-			wantKey: []string{"database"},
-			wantLabels: []metrics.Label{
-				{
-					Name:  "name",
-					Value: "foo",
-				},
-				{
-					Name:  "method",
-					Value: "RenewUser",
-				},
-			},
-		},
-		{
-			desc:    "database.foo.RenewUser.error",
-			in:      []string{"database", "foo", "RenewUser", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.foo.RenewUser",
+			in:      []string{"vault", "database", "foo", "RenewUser"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",
@@ -1032,9 +1017,24 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.RevokeUser",
-			in:      []string{"database", "RevokeUser"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.foo.RenewUser.error",
+			in:      []string{"vault", "database", "foo", "RenewUser", "error"},
+			wantKey: []string{"vault", "database", "error"},
+			wantLabels: []metrics.Label{
+				{
+					Name:  "name",
+					Value: "foo",
+				},
+				{
+					Name:  "method",
+					Value: "RenewUser",
+				},
+			},
+		},
+		{
+			desc:    "vault.database.RevokeUser",
+			in:      []string{"vault", "database", "RevokeUser"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -1043,9 +1043,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.RevokeUser.error",
-			in:      []string{"database", "RevokeUser", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.RevokeUser.error",
+			in:      []string{"vault", "database", "RevokeUser", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "method",
@@ -1054,9 +1054,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.RevokeUser",
-			in:      []string{"database", "foo", "RevokeUser"},
-			wantKey: []string{"database"},
+			desc:    "vault.database.foo.RevokeUser",
+			in:      []string{"vault", "database", "foo", "RevokeUser"},
+			wantKey: []string{"vault", "database"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",
@@ -1069,9 +1069,9 @@ func TestExtractor(t *testing.T) {
 			},
 		},
 		{
-			desc:    "database.foo.RevokeUser.error",
-			in:      []string{"database", "foo", "RevokeUser", "error"},
-			wantKey: []string{"database", "error"},
+			desc:    "vault.database.foo.RevokeUser.error",
+			in:      []string{"vault", "database", "foo", "RevokeUser", "error"},
+			wantKey: []string{"vault", "database", "error"},
 			wantLabels: []metrics.Label{
 				{
 					Name:  "name",

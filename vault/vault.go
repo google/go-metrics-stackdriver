@@ -25,17 +25,16 @@ func Extractor(key []string) ([]string, []metrics.Label, error) {
 	// Metrics documented at https://www.vaultproject.io/docs/internals/telemetry.html should be
 	// extracted here into a base metric name with appropriate labels extracted from the 'key'.
 	switch len(key) {
-	case 2: // metrics of format: *.*
-		// database.<method>
-		if key[0] == "database" {
-			return key[:1], []metrics.Label{
+	case 3: // metrics of format: *.*.*
+		// vault.database.<method>
+		if key[0] == "vault" && key[1] == "database" {
+			return key[:2], []metrics.Label{
 				{
 					Name:  "method",
-					Value: key[1],
+					Value: key[2],
 				},
 			}, nil
 		}
-	case 3: // metrics of format: *.*.*
 		// vault.token.create_root
 		if key[0] == "vault" && key[1] == "token" && key[2] == "create_root" {
 			return key, nil, nil
@@ -58,29 +57,6 @@ func Extractor(key []string) ([]string, []metrics.Label, error) {
 				{
 					Name:  "method",
 					Value: key[2],
-				},
-			}, nil
-		}
-		// database.<name>.<method>
-		// note: there are database.<method>.error counters. Those are handled separately.
-		if key[0] == "database" && key[2] != "error" {
-			return key[:1], []metrics.Label{
-				{
-					Name:  "name",
-					Value: key[1],
-				},
-				{
-					Name:  "method",
-					Value: key[2],
-				},
-			}, nil
-		}
-		// database.<method>.error
-		if key[0] == "database" && key[2] == "error" {
-			return []string{"database", "error"}, []metrics.Label{
-				{
-					Name:  "method",
-					Value: key[1],
 				},
 			}, nil
 		}
@@ -125,16 +101,40 @@ func Extractor(key []string) ([]string, []metrics.Label, error) {
 				},
 			}, nil
 		}
-		// database.<name>.<method>.error
-		if key[0] == "database" && key[3] == "error" {
-			return []string{key[0], key[3]}, []metrics.Label{
+		// vault.database.<name>.<method>
+		// note: there are vault.database.<method>.error counters. Those are handled separately.
+		if key[0] == "vault" && key[1] == "database" && key[3] != "error" {
+			return key[:2], []metrics.Label{
 				{
 					Name:  "name",
-					Value: key[1],
+					Value: key[2],
 				},
 				{
 					Name:  "method",
+					Value: key[3],
+				},
+			}, nil
+		}
+		//ivault.database.<method>.error
+		if key[0] == "vault" && key[1] == "database" && key[3] == "error" {
+			return []string{"vault", "database", "error"}, []metrics.Label{
+				{
+					Name:  "method",
 					Value: key[2],
+				},
+			}, nil
+		}
+	case 5:
+		// vault.database.<name>.<method>.error
+		if key[0] == "vault" && key[1] == "database" && key[4] == "error" {
+			return []string{key[0], key[1], key[4]}, []metrics.Label{
+				{
+					Name:  "name",
+					Value: key[2],
+				},
+				{
+					Name:  "method",
+					Value: key[3],
 				},
 			}, nil
 		}
