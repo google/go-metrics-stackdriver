@@ -1343,6 +1343,11 @@ func TestExtractor(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc:    "vault.token.create_root",
+			in:      []string{"vault", "token", "create_root"},
+			wantKey: []string{"vault", "token", "create_root"},
+		},
 	}
 
 	for _, tc := range tests {
