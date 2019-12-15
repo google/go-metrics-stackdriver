@@ -281,7 +281,7 @@ func TestSample(t *testing.T) {
 
 func TestExtract(t *testing.T) {
 	ss := newTestSink(0*time.Second, nil)
-	ss.extractor = func(key []string) ([]string, []metrics.Label, error) {
+	ss.extractor = func(key []string, kind string) ([]string, []metrics.Label, error) {
 		return key[:1], []metrics.Label{
 			{
 				Name:  "method",

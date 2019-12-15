@@ -1352,7 +1352,26 @@ func TestExtractor(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			key, labels, _ := Extractor(tc.in)
+			// counter
+			key, labels, _ := Extractor(tc.in, "counter")
+			if diff := cmp.Diff(append(tc.wantKey, "counter"), key); diff != "" {
+				t.Errorf("Extractor(%s) mismatch key (-want +got):\n%s", tc.in, diff)
+			}
+			if diff := cmp.Diff(tc.wantLabels, labels); diff != "" {
+				t.Errorf("Extractor(%s) mismatch labels (-want +got):\n%s", tc.in, diff)
+			}
+
+			// gauge
+			key, labels, _ = Extractor(tc.in, "gauge")
+			if diff := cmp.Diff(append(tc.wantKey, "gauge"), key); diff != "" {
+				t.Errorf("Extractor(%s) mismatch key (-want +got):\n%s", tc.in, diff)
+			}
+			if diff := cmp.Diff(tc.wantLabels, labels); diff != "" {
+				t.Errorf("Extractor(%s) mismatch labels (-want +got):\n%s", tc.in, diff)
+			}
+
+			// histogram
+			key, labels, _ = Extractor(tc.in, "histogram")
 			if diff := cmp.Diff(tc.wantKey, key); diff != "" {
 				t.Errorf("Extractor(%s) mismatch key (-want +got):\n%s", tc.in, diff)
 			}
