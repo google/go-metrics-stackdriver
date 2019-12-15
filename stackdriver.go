@@ -108,10 +108,10 @@ type taskInfo struct {
 // name.
 type BucketFn func([]string) []float64
 
-// ExtractLabelsFn converts a given metric name into a new metric name and
-// optionally additional labels. Errors will prevent the metric from writing
-// to stackdriver.
-type ExtractLabelsFn func([]string) ([]string, []metrics.Label, error)
+// ExtractLabelsFn converts a given metric name and type into a new metric
+// name and optionally additional labels. Errors will prevent the metric from
+// writing to stackdriver.
+type ExtractLabelsFn func([]string, string) ([]string, []metrics.Label, error)
 
 // DefaultBucketer is the default BucketFn used to determing bucketing values
 // for metrics.
@@ -120,9 +120,19 @@ func DefaultBucketer(key []string) []float64 {
 }
 
 // DefaultLabelExtractor is the default ExtractLabelsFn and is a direct
-// passthrough.
-func DefaultLabelExtractor(key []string) ([]string, []metrics.Label, error) {
-	return key, nil, nil
+// passthrough. Counter and Gauge metrics are renamed to include the type in
+// their name to avoid duplicate metrics with the same name but different
+// types (which is allowed by go-metrics but not by Stackdriver).
+func DefaultLabelExtractor(key []string, kind string) ([]string, []metrics.Label, error) {
+	switch kind {
+	case "counter":
+		return append(key, "counter"), nil, nil
+	case "gauge":
+		return append(key, "gauge"), nil, nil
+	case "histogram":
+		return key, nil, nil
+	}
+	return nil, nil, fmt.Errorf("Unknown metric kind: %s", kind)
 }
 
 // NewSink creates a Sink to flush metrics to stackdriver every interval. The
@@ -270,7 +280,7 @@ func (s *Sink) report(ctx context.Context) {
 	ts := []*monitoringpb.TimeSeries{}
 
 	for _, v := range rCounters {
-		name, labels, err := v.name.labelMap(s.extractor)
+		name, labels, err := v.name.labelMap(s.extractor, "counter")
 		if err != nil {
 			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
@@ -300,7 +310,7 @@ func (s *Sink) report(ctx context.Context) {
 	}
 
 	for _, v := range rGauges {
-		name, labels, err := v.name.labelMap(s.extractor)
+		name, labels, err := v.name.labelMap(s.extractor, "gauge")
 		if err != nil {
 			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
@@ -330,7 +340,7 @@ func (s *Sink) report(ctx context.Context) {
 	}
 
 	for _, v := range rHistograms {
-		name, labels, err := v.name.labelMap(s.extractor)
+		name, labels, err := v.name.labelMap(s.extractor, "histogram")
 		if err != nil {
 			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
@@ -389,13 +399,17 @@ func (s *Sink) report(ctx context.Context) {
 			end = len(ts)
 		}
 
-		err := s.client.CreateTimeSeries(ctx, &monitoringpb.CreateTimeSeriesRequest{
+		req := &monitoringpb.CreateTimeSeriesRequest{
 			Name:       fmt.Sprintf("projects/%s", s.taskInfo.ProjectID),
 			TimeSeries: ts[i:end],
-		})
+		}
+		err := s.client.CreateTimeSeries(ctx, req)
 
 		if err != nil {
 			log.Printf("Failed to write time series data: %v", err)
+			for i, a := range req.TimeSeries {
+				log.Printf("request timeseries[%d]: %v", i, a)
+			}
 		}
 	}
 }
@@ -495,9 +509,9 @@ func newSeries(key []string, labels []metrics.Label) *series {
 	}
 }
 
-func (s *series) labelMap(extractor ExtractLabelsFn) (string, map[string]string, error) {
+func (s *series) labelMap(extractor ExtractLabelsFn, kind string) (string, map[string]string, error) {
 	// extract labels from the key
-	key, extractedLabels, err := extractor(s.key)
+	key, extractedLabels, err := extractor(s.key, kind)
 	if err != nil {
 		return "", nil, err
 	}
