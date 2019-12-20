@@ -54,7 +54,8 @@ type Sink struct {
 	extractor ExtractLabelsFn
 	taskInfo  *taskInfo
 
-	mu sync.Mutex
+	mu        sync.Mutex
+	debugLogs bool
 }
 
 // Config options for the stackdriver Sink.
@@ -94,6 +95,11 @@ type Config struct {
 	// https://cloud.google.com/monitoring/api/resources#tag_generic_task
 	// Optional. Defaults to a combination of hostname+pid.
 	TaskID string
+
+	// Debug logging. Errors will be logged to stderr, but setting this to true
+	// will log additional information that is helpful when debugging errors.
+	// Optional. Defaults to false.
+	DebugLogs bool
 }
 
 type taskInfo struct {
@@ -150,6 +156,7 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 			Job:       config.Job,
 			TaskID:    config.TaskID,
 		},
+		debugLogs: config.DebugLogs,
 	}
 
 	// apply defaults if not configured explicitly
@@ -285,6 +292,9 @@ func (s *Sink) report(ctx context.Context) {
 			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
 		}
+		if s.debugLogs {
+			log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
+		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
 				Type:   path.Join("custom.googleapis.com", "go-metrics", name),
@@ -314,6 +324,9 @@ func (s *Sink) report(ctx context.Context) {
 		if err != nil {
 			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
+		}
+		if s.debugLogs {
+			log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
 		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
@@ -345,6 +358,10 @@ func (s *Sink) report(ctx context.Context) {
 			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
 		}
+		if s.debugLogs {
+			log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
+		}
+
 		var count int64
 		count = 0
 		for _, i := range v.counts {
@@ -407,8 +424,10 @@ func (s *Sink) report(ctx context.Context) {
 
 		if err != nil {
 			log.Printf("Failed to write time series data: %v", err)
-			for i, a := range req.TimeSeries {
-				log.Printf("request timeseries[%d]: %v", i, a)
+			if s.debugLogs {
+				for i, a := range req.TimeSeries {
+					log.Printf("request timeseries[%d]: %v", i, a)
+				}
 			}
 		}
 	}
