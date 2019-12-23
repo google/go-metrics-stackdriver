@@ -120,6 +120,7 @@ func TestSample(t *testing.T) {
 				ss.AddSample([]string{"foo", "bar"}, 5.0)
 				ss.AddSample([]string{"foo", "bar"}, 100.0)
 				ss.AddSample([]string{"foo", "bar"}, 500.0)
+				ss.AddSample([]string{"foo", "bar"}, 50000000.0)
 			},
 			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
 				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
@@ -136,8 +137,8 @@ func TestSample(t *testing.T) {
 										Value: &monitoringpb.TypedValue{
 											Value: &monitoringpb.TypedValue_DistributionValue{
 												DistributionValue: &distributionpb.Distribution{
-													BucketCounts: []int64{1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-													Count:        3,
+													BucketCounts: []int64{1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1},
+													Count:        4,
 												},
 											},
 										},
