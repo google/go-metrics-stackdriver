@@ -25,7 +25,11 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3"
 	metrics "github.com/armon/go-metrics"
 	emptypb "github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/option"
+	distributionpb "google.golang.org/genproto/googleapis/api/distribution"
+	"google.golang.org/genproto/googleapis/api/metric"
+	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -119,11 +123,33 @@ func TestSample(t *testing.T) {
 			},
 			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
 				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
-					if req.TimeSeries[0].Points[0].Value.GetDistributionValue().BucketCounts[0] == 1 {
-						return &emptypb.Empty{}, nil
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo_bar",
+								},
+								MetricKind: metric.MetricDescriptor_CUMULATIVE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DistributionValue{
+												DistributionValue: &distributionpb.Distribution{
+													BucketCounts: []int64{1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
+													Count:        3,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					}
-					t.Errorf("unexpected CreateTimeSeriesRequest\nwant: %s\ngot: %v", "bucket 0 count 1", req)
-					return nil, errors.New("unexpected CreateTimeSeriesRequest")
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
 				}
 			},
 		},
@@ -363,11 +389,66 @@ func (s *mockMetricServer) CreateTimeSeries(ctx context.Context, req *monitoring
 // Skips defaults that are not appropriate for tests.
 func newTestSink(interval time.Duration, client *monitoring.MetricClient) *Sink {
 	s := &Sink{}
-	s.taskInfo = &taskInfo{}
+	s.taskInfo = &taskInfo{
+		ProjectID: "foo",
+	}
 	s.interval = interval
 	s.bucketer = DefaultBucketer
 	s.extractor = DefaultLabelExtractor
 	s.reset()
 	go s.flushMetrics(context.Background())
 	return s
+}
+
+func diffCreateMsg(want, got *monitoringpb.CreateTimeSeriesRequest) string {
+	out := ""
+	if want.GetName() != "" && (want.GetName() != got.GetName()) {
+		out += fmt.Sprintf("Unexpected Name, got: %s, want:%s\n", got.GetName(), want.GetName())
+	}
+
+	for i := range want.GetTimeSeries() {
+		w := want.GetTimeSeries()[i]
+		g := got.GetTimeSeries()[i]
+
+		if w.GetMetricKind() != g.GetMetricKind() {
+			out += fmt.Sprintf("Unexpected MetricKind, got: %s, want:%s\n", g.GetMetricKind(), w.GetMetricKind())
+		}
+
+		if w.GetMetric().GetType() != g.GetMetric().GetType() {
+			out += fmt.Sprintf("Unexpected Metric Type, got: %s, want:%s\n", g.GetMetric().GetType(), w.GetMetric().GetType())
+		}
+
+		if len(w.GetMetric().GetLabels()) != 0 {
+			d := cmp.Diff(g.GetMetric().GetLabels(), w.GetMetric().GetLabels())
+			if d != "" {
+				out += fmt.Sprintf("Unexpected metric labels diff:%s \n", d)
+			}
+		}
+
+		for j := range w.GetPoints() {
+			wp := w.GetPoints()[j]
+			gp := g.GetPoints()[j]
+
+			// TODO: support diffing the start/end times
+
+			// gauge/count
+			if wp.GetValue().GetDoubleValue() != gp.GetValue().GetDoubleValue() {
+				out += fmt.Sprintf("Unexpected value (@point %d), got: %v, want:%v\n", j, gp.GetValue().GetDoubleValue(), wp.GetValue().GetDoubleValue())
+			}
+
+			// distribution
+			if wd := wp.GetValue().GetDistributionValue(); wd != nil {
+				gd := gp.GetValue().GetDistributionValue()
+				// TODO: support diffing custom buckets
+				d := cmp.Diff(gd.GetBucketCounts(), wd.GetBucketCounts())
+				if d != "" {
+					out += fmt.Sprintf("Unexpected bucket counts diff (@point %d):%s \n", j, d)
+				}
+				if gd.GetCount() != wd.GetCount() {
+					out += fmt.Sprintf("Unexpected count (@point %d), got: %v, want: %v\n", j, gd.GetCount(), wd.GetCount())
+				}
+			}
+		}
+	}
+	return out
 }
