@@ -137,6 +137,46 @@ func TestSample(t *testing.T) {
 			},
 		},
 		{
+			name: "histogram with label",
+			collect: func() {
+				ss.AddSampleWithLabels([]string{"foo", "bar"}, 5.0, []metrics.Label{metrics.Label{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo_bar",
+									Labels: map[string]string{
+										"env": "dev",
+									},
+								},
+								MetricKind: metric.MetricDescriptor_CUMULATIVE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DistributionValue{
+												DistributionValue: &distributionpb.Distribution{
+													BucketCounts: []int64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+													Count:        1,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
 			name: "hisogram with samples in multiple buckets",
 			collect: func() {
 				ss.AddSample([]string{"foo", "bar"}, 5.0)
@@ -250,6 +290,43 @@ func TestSample(t *testing.T) {
 			},
 		},
 		{
+			name: "counter with label",
+			collect: func() {
+				ss.IncrCounterWithLabels([]string{"foo", "bar"}, 1.0, []metrics.Label{metrics.Label{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo_bar_counter",
+									Labels: map[string]string{
+										"env": "dev",
+									},
+								},
+								MetricKind: metric.MetricDescriptor_GAUGE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DoubleValue{
+												DoubleValue: 1.0,
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
 			name: "multiple counts",
 			collect: func() {
 				ss.IncrCounter([]string{"foo", "bar"}, 1.0)
@@ -305,6 +382,43 @@ func TestSample(t *testing.T) {
 										Value: &monitoringpb.TypedValue{
 											Value: &monitoringpb.TypedValue_DoubleValue{
 												DoubleValue: 50.0,
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
+			name: "gauge with label",
+			collect: func() {
+				ss.SetGaugeWithLabels([]string{"foo", "bar"}, 1.0, []metrics.Label{metrics.Label{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo_bar_gauge",
+									Labels: map[string]string{
+										"env": "dev",
+									},
+								},
+								MetricKind: metric.MetricDescriptor_GAUGE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DoubleValue{
+												DoubleValue: 1.0,
 											},
 										},
 									},
@@ -487,6 +601,123 @@ func TestExtract(t *testing.T) {
 													BucketCounts: []int64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 													Count:        1,
 												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
+			name: "histogram with label",
+			collect: func() {
+				ss.AddSampleWithLabels([]string{"foo", "bar"}, 5.0, []metrics.Label{metrics.Label{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo",
+									Labels: map[string]string{
+										"env":    "dev",
+										"method": "bar",
+									},
+								},
+								MetricKind: metric.MetricDescriptor_CUMULATIVE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DistributionValue{
+												DistributionValue: &distributionpb.Distribution{
+													BucketCounts: []int64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+													Count:        1,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
+			name: "counter with label",
+			collect: func() {
+				ss.IncrCounterWithLabels([]string{"foo", "bar"}, 1.0, []metrics.Label{metrics.Label{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo",
+									Labels: map[string]string{
+										"env":    "dev",
+										"method": "bar",
+									},
+								},
+								MetricKind: metric.MetricDescriptor_GAUGE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DoubleValue{
+												DoubleValue: 1.0,
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
+			name: "gauge with label",
+			collect: func() {
+				ss.SetGaugeWithLabels([]string{"foo", "bar"}, 1.0, []metrics.Label{metrics.Label{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							&monitoringpb.TimeSeries{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo",
+									Labels: map[string]string{
+										"env":    "dev",
+										"method": "bar",
+									},
+								},
+								MetricKind: metric.MetricDescriptor_GAUGE,
+								Points: []*monitoringpb.Point{
+									&monitoringpb.Point{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DoubleValue{
+												DoubleValue: 1.0,
 											},
 										},
 									},
