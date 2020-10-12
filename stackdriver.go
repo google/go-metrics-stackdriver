@@ -52,6 +52,7 @@ type Sink struct {
 
 	bucketer  BucketFn
 	extractor ExtractLabelsFn
+	prefix    string
 	taskInfo  *taskInfo
 
 	mu        sync.Mutex
@@ -69,6 +70,9 @@ type Config struct {
 	// variable parameters within a metric name.
 	// Optional. Defaults to DefaultLabelExtractor.
 	LabelExtractor ExtractLabelsFn
+	// Prefix of the metrics recorded. Defaults to "go-metrics/" so your metric "foo" will be recorded as
+	// "custom.googleapis.com/go-metrics/foo".
+	Prefix *string
 	// The bucketer is used to determine histogram bucket boundaries
 	// for the sampled metrics. This will execute before the LabelExtractor.
 	// Optional. Defaults to DefaultBucketer.
@@ -147,6 +151,7 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 	s := &Sink{
 		client:    client,
 		extractor: config.LabelExtractor,
+		prefix:    "go-metrics/",
 		bucketer:  config.Bucketer,
 		interval:  config.ReportingInterval,
 		taskInfo: &taskInfo{
@@ -159,6 +164,13 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 		debugLogs: config.DebugLogs,
 	}
 
+	if config.Prefix != nil {
+		if isValidMetricsPrefix(*config.Prefix) {
+			s.prefix = *config.Prefix
+		} else {
+			log.Printf("%s is not valid string to be used as metrics name, using default value 'go-metrics/'", *config.Prefix)
+		}
+	}
 	// apply defaults if not configured explicitly
 	if s.extractor == nil {
 		s.extractor = DefaultLabelExtractor
@@ -205,6 +217,12 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 	go s.flushMetrics(context.Background())
 
 	return s
+}
+
+func isValidMetricsPrefix(s string) bool {
+	// start with alphanumeric, can contain underscore in path (expect first char), slash is used to separate path.
+	match, err := regexp.MatchString("^(?:[a-z0-9](?:[a-z0-9_]*)/?)*$", s)
+	return err == nil && match
 }
 
 func (s *Sink) flushMetrics(ctx context.Context) {
@@ -297,7 +315,7 @@ func (s *Sink) report(ctx context.Context) {
 		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
-				Type:   path.Join("custom.googleapis.com", "go-metrics", name),
+				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
 			MetricKind: metric.MetricDescriptor_GAUGE,
@@ -330,7 +348,7 @@ func (s *Sink) report(ctx context.Context) {
 		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
-				Type:   path.Join("custom.googleapis.com", "go-metrics", name),
+				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
 			MetricKind: metric.MetricDescriptor_GAUGE,
@@ -370,7 +388,7 @@ func (s *Sink) report(ctx context.Context) {
 
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
-				Type:   path.Join("custom.googleapis.com", "go-metrics", name),
+				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
 			MetricKind: metric.MetricDescriptor_CUMULATIVE,

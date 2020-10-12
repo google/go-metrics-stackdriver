@@ -91,6 +91,93 @@ func BenchmarkReport10(b *testing.B)  { benchmarkCopy(10, 10, 10, b) }
 func BenchmarkReport50(b *testing.B)  { benchmarkCopy(50, 50, 50, b) }
 func BenchmarkReport100(b *testing.B) { benchmarkCopy(100, 100, 100, b) }
 
+func sPtr(s string) *string {
+	return &s
+}
+
+func TestNewSinkSetCustomPrefix(t *testing.T) {
+	tests := []struct {
+		name           string
+		configPrefix   *string
+		expectedPrefix string
+	}{
+		{
+			name:           "default to go-metrics/",
+			expectedPrefix: "go-metrics/",
+		},
+		{
+			name:           "set custom",
+			configPrefix:   sPtr("cuSt0m_metrics"),
+			expectedPrefix: "cuSt0m_metrics",
+		},
+		{
+			name:           "default to go-metrics/ when given prefix is invalid",
+			configPrefix:   sPtr("___"),
+			expectedPrefix: "go-metrics/",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ss := NewSink(nil, &Config{Prefix: tc.configPrefix})
+
+			if ss.prefix != tc.expectedPrefix {
+				t.Errorf("prefix should be initalized as '" + tc.expectedPrefix + "' but got " + ss.prefix)
+			}
+		})
+	}
+}
+
+func TestIsValidMetricsPrefix(t *testing.T) {
+	tests := []struct {
+		prefix        string
+		expectedValid bool
+	}{
+		{
+			prefix:        "",
+			expectedValid: true,
+		},
+		{
+			prefix:        "a",
+			expectedValid: true,
+		},
+		{
+			prefix:        "abc/bef/",
+			expectedValid: true,
+		},
+		{
+			prefix:        "aa_",
+			expectedValid: true,
+		},
+		{
+			prefix:        "///",
+			expectedValid: false,
+		},
+		{
+			prefix:        "!",
+			expectedValid: false,
+		},
+		{
+			prefix:        "_aa",
+			expectedValid: false,
+		},
+		{
+			prefix:        "日本語",
+			expectedValid: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.prefix, func(t *testing.T) {
+			if isValidMetricsPrefix(tc.prefix) != tc.expectedValid {
+				if tc.expectedValid {
+					t.Errorf("expected %s to be valid", tc.prefix)
+				} else {
+					t.Errorf("expected %s to be invalid", tc.prefix)
+				}
+			}
+		})
+	}
+}
+
 func TestSample(t *testing.T) {
 	ss := newTestSink(0*time.Second, nil)
 
@@ -943,6 +1030,7 @@ func newTestSink(interval time.Duration, client *monitoring.MetricClient) *Sink 
 	s.taskInfo = &taskInfo{
 		ProjectID: "foo",
 	}
+	s.prefix = "go-metrics/"
 	s.interval = interval
 	s.bucketer = DefaultBucketer
 	s.extractor = DefaultLabelExtractor
