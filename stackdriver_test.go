@@ -107,8 +107,8 @@ func TestNewSinkSetCustomPrefix(t *testing.T) {
 		},
 		{
 			name:           "set custom",
-			configPrefix:   sPtr("cuSt0m_metrics"),
-			expectedPrefix: "cuSt0m_metrics",
+			configPrefix:   sPtr("cust0m_metrics"),
+			expectedPrefix: "cust0m_metrics",
 		},
 		{
 			name:           "default to go-metrics/ when given prefix is invalid",
