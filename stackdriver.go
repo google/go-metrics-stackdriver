@@ -55,6 +55,8 @@ type Sink struct {
 	prefix    string
 	taskInfo  *taskInfo
 
+	monitoredResource *monitoredrespb.MonitoredResource
+
 	mu        sync.Mutex
 	debugLogs bool
 }
@@ -104,6 +106,15 @@ type Config struct {
 	// will log additional information that is helpful when debugging errors.
 	// Optional. Defaults to false.
 	DebugLogs bool
+
+	//MonitoredResource identifies the machine/service/resource
+	//that is monitored.
+	//Different possible settings are defined here:
+	//https://cloud.google.com/monitoring/api/resources
+	//
+	//setting a nil MonitoredResource will run
+	//a defaultMonitoredResource function.
+	MonitoredResource *monitoredrespb.MonitoredResource
 }
 
 type taskInfo struct {
@@ -122,6 +133,20 @@ type BucketFn func([]string) []float64
 // name and optionally additional labels. Errors will prevent the metric from
 // writing to stackdriver.
 type ExtractLabelsFn func([]string, string) ([]string, []metrics.Label, error)
+
+// defaultMonitoredResource returns default monitored resource
+func defaultMonitoredResource(taskInfo *taskInfo) *monitoredrespb.MonitoredResource {
+	return &monitoredrespb.MonitoredResource{
+		Type: "generic_task",
+		Labels: map[string]string{
+			"project_id": taskInfo.ProjectID,
+			"location":   taskInfo.Location,
+			"namespace":  taskInfo.Namespace,
+			"job":        taskInfo.Job,
+			"task_id":    taskInfo.TaskID,
+		},
+	}
+}
 
 // DefaultBucketer is the default BucketFn used to determing bucketing values
 // for metrics.
@@ -211,6 +236,12 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 		s.taskInfo.TaskID = "go-" + strconv.Itoa(os.Getpid()) + "@" + hostname
 	}
 
+	if config.MonitoredResource != nil {
+		s.monitoredResource = config.MonitoredResource
+	} else {
+		s.monitoredResource = defaultMonitoredResource(s.taskInfo)
+	}
+
 	s.reset()
 
 	// run cancelable goroutine that reports on interval
@@ -291,16 +322,7 @@ func (s *Sink) report(ctx context.Context) {
 	end, rGauges, rCounters, rHistograms := s.deep()
 
 	// https://cloud.google.com/monitoring/api/resources
-	resource := &monitoredrespb.MonitoredResource{
-		Type: "generic_task",
-		Labels: map[string]string{
-			"project_id": s.taskInfo.ProjectID,
-			"location":   s.taskInfo.Location,
-			"namespace":  s.taskInfo.Namespace,
-			"job":        s.taskInfo.Job,
-			"task_id":    s.taskInfo.TaskID,
-		},
-	}
+	resource := s.monitoredResource
 
 	ts := []*monitoringpb.TimeSeries{}
 

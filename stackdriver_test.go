@@ -14,9 +14,12 @@
 package stackdriver
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
 	"net"
 	"sync"
 	"testing"
@@ -1090,4 +1093,85 @@ func diffCreateMsg(want, got *monitoringpb.CreateTimeSeriesRequest) string {
 		}
 	}
 	return out
+}
+
+func TestCustomMonitorResource(t *testing.T) {
+	checkLabels := func(sink *Sink, labels map[string]string) error {
+		expectedLabels := sink.monitoredResource.GetLabels()
+
+		expectedLabelsBytes, _ := json.Marshal(expectedLabels)
+		labelsBytes, _ := json.Marshal(labels)
+
+		if expectedLabelsBytes == nil || !bytes.Equal(expectedLabelsBytes, labelsBytes) {
+			return errors.New("invalid labels")
+		}
+
+		return nil
+	}
+
+	{
+		labels := map[string]string{
+			"project_id":     "project",
+			"location":       "zone",
+			"cluster_name":   "cluster",
+			"container_name": "container_name",
+			"namespace_name": "namespace_name",
+			"pod_name":       "pod_name",
+		}
+
+		sink := NewSink(nil, &Config{
+			ProjectID: "example_project",
+			Prefix:    sPtr(""),
+			MonitoredResource: &monitoredrespb.MonitoredResource{
+				Labels: labels,
+				Type:   "k8s_container",
+			},
+		})
+
+		if err := checkLabels(sink, labels); err != nil {
+			t.Error(err)
+		}
+	}
+
+	{
+		sink := NewSink(nil, &Config{
+			ProjectID: "example_project",
+			Prefix:    sPtr(""),
+		})
+
+		labels := defaultMonitoredResource(sink.taskInfo).GetLabels()
+
+		if err := checkLabels(sink, labels); err != nil {
+			t.Error(err)
+		}
+	}
+
+	{
+		labels := map[string]string{
+			"project_id":     "project",
+			"location":       "zone",
+			"cluster_name":   "cluster",
+			"container_name": "container_name",
+			"namespace_name": "namespace_name",
+			"pod_name":       "pod_name",
+		}
+
+		invalidLabels := map[string]string{
+			"project_id": "project",
+		}
+
+		sink := NewSink(nil, &Config{
+			ProjectID: "example_project",
+			Prefix:    sPtr(""),
+			MonitoredResource: &monitoredrespb.MonitoredResource{
+				Labels: labels,
+				Type:   "k8s_container",
+			},
+		})
+
+		if err := checkLabels(sink, invalidLabels); err == nil {
+			t.Error("labels should be the same")
+		}
+	}
+
 }
