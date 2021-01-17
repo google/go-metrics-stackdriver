@@ -107,13 +107,11 @@ type Config struct {
 	// Optional. Defaults to false.
 	DebugLogs bool
 
-	//MonitoredResource identifies the machine/service/resource
-	//that is monitored.
-	//Different possible settings are defined here:
-	//https://cloud.google.com/monitoring/api/resources
+	// MonitoredResource identifies the machine/service/resource that is monitored.
+	// Different possible settings are defined here:
+	// https://cloud.google.com/monitoring/api/resources
 	//
-	//setting a nil MonitoredResource will run
-	//a defaultMonitoredResource function.
+	// Setting a nil MonitoredResource will run a defaultMonitoredResource function.
 	MonitoredResource *monitoredrespb.MonitoredResource
 }
 

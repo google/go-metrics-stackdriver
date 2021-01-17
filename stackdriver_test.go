@@ -14,12 +14,9 @@
 package stackdriver
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
 	"net"
 	"sync"
 	"testing"
@@ -33,6 +30,7 @@ import (
 	distributionpb "google.golang.org/genproto/googleapis/api/distribution"
 	"google.golang.org/genproto/googleapis/api/metric"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
+	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -93,6 +91,12 @@ func BenchmarkReport1(b *testing.B)   { benchmarkCopy(1, 1, 1, b) }
 func BenchmarkReport10(b *testing.B)  { benchmarkCopy(10, 10, 10, b) }
 func BenchmarkReport50(b *testing.B)  { benchmarkCopy(50, 50, 50, b) }
 func BenchmarkReport100(b *testing.B) { benchmarkCopy(100, 100, 100, b) }
+
+func diffTest(t *testing.T, title string, x, y interface{}) {
+	if diff := cmp.Diff(x, y); diff != "" {
+		t.Errorf("%s mismatch (-want +got):\n%s", title, diff)
+	}
+}
 
 func sPtr(s string) *string {
 	return &s
@@ -1095,83 +1099,67 @@ func diffCreateMsg(want, got *monitoringpb.CreateTimeSeriesRequest) string {
 	return out
 }
 
+func monitoredResourceDiff(t *testing.T, s *Sink, labels map[string]string) {
+	diffTest(t, "Monitored Resource labels", s.monitoredResource.GetLabels(), labels)
+}
+
 func TestCustomMonitorResource(t *testing.T) {
-	checkLabels := func(sink *Sink, labels map[string]string) error {
-		expectedLabels := sink.monitoredResource.GetLabels()
-
-		expectedLabelsBytes, _ := json.Marshal(expectedLabels)
-		labelsBytes, _ := json.Marshal(labels)
-
-		if expectedLabelsBytes == nil || !bytes.Equal(expectedLabelsBytes, labelsBytes) {
-			return errors.New("invalid labels")
-		}
-
-		return nil
+	labels := map[string]string{
+		"project_id":     "project",
+		"location":       "zone",
+		"cluster_name":   "cluster",
+		"container_name": "container_name",
+		"namespace_name": "namespace_name",
+		"pod_name":       "pod_name",
 	}
 
-	{
-		labels := map[string]string{
-			"project_id":     "project",
-			"location":       "zone",
-			"cluster_name":   "cluster",
-			"container_name": "container_name",
-			"namespace_name": "namespace_name",
-			"pod_name":       "pod_name",
-		}
+	sink := NewSink(nil, &Config{
+		ProjectID: "example_project",
+		Prefix:    sPtr(""),
+		MonitoredResource: &monitoredrespb.MonitoredResource{
+			Labels: labels,
+			Type:   "k8s_container",
+		},
+	})
 
-		sink := NewSink(nil, &Config{
-			ProjectID: "example_project",
-			Prefix:    sPtr(""),
-			MonitoredResource: &monitoredrespb.MonitoredResource{
-				Labels: labels,
-				Type:   "k8s_container",
-			},
-		})
+	monitoredResourceDiff(t, sink, labels)
+}
 
-		if err := checkLabels(sink, labels); err != nil {
-			t.Error(err)
-		}
+func TestCustomMonitorResourceWithDefaultLabels(t *testing.T) {
+	sink := NewSink(nil, &Config{
+		ProjectID: "example_project",
+		Prefix:    sPtr(""),
+	})
+
+	labels := defaultMonitoredResource(sink.taskInfo).GetLabels()
+
+	monitoredResourceDiff(t, sink, labels)
+}
+
+func TestCustomMonitorResourceWithInvalidLabels(t *testing.T) {
+	labels := map[string]string{
+		"project_id":     "project",
+		"location":       "zone",
+		"cluster_name":   "cluster",
+		"container_name": "container_name",
+		"namespace_name": "namespace_name",
+		"pod_name":       "pod_name",
 	}
 
-	{
-		sink := NewSink(nil, &Config{
-			ProjectID: "example_project",
-			Prefix:    sPtr(""),
-		})
-
-		labels := defaultMonitoredResource(sink.taskInfo).GetLabels()
-
-		if err := checkLabels(sink, labels); err != nil {
-			t.Error(err)
-		}
+	invalidLabels := map[string]string{
+		"project_id": "project",
 	}
 
-	{
-		labels := map[string]string{
-			"project_id":     "project",
-			"location":       "zone",
-			"cluster_name":   "cluster",
-			"container_name": "container_name",
-			"namespace_name": "namespace_name",
-			"pod_name":       "pod_name",
-		}
+	sink := NewSink(nil, &Config{
+		ProjectID: "example_project",
+		Prefix:    sPtr(""),
+		MonitoredResource: &monitoredrespb.MonitoredResource{
+			Labels: labels,
+			Type:   "k8s_container",
+		},
+	})
 
-		invalidLabels := map[string]string{
-			"project_id": "project",
-		}
-
-		sink := NewSink(nil, &Config{
-			ProjectID: "example_project",
-			Prefix:    sPtr(""),
-			MonitoredResource: &monitoredrespb.MonitoredResource{
-				Labels: labels,
-				Type:   "k8s_container",
-			},
-		})
-
-		if err := checkLabels(sink, invalidLabels); err == nil {
-			t.Error("labels should be the same")
-		}
+	if diff := cmp.Diff(sink.monitoredResource.GetLabels(), invalidLabels); diff == "" {
+		t.Error("Monitored Resource labels should not be equal")
 	}
-
 }
