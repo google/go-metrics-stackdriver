@@ -36,6 +36,12 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
+// Logger is the log interface used in go-metrics-stackdriver
+type Logger interface {
+	Printf(format string, v ...interface{})
+	Println(v ...interface{})
+}
+
 // Sink conforms to the metrics.MetricSink interface and is used to transmit
 // metrics information to stackdriver.
 //
@@ -59,6 +65,8 @@ type Sink struct {
 
 	mu        sync.Mutex
 	debugLogs bool
+
+	log Logger
 }
 
 // Config options for the stackdriver Sink.
@@ -113,6 +121,9 @@ type Config struct {
 	//
 	// Setting a nil MonitoredResource will run a defaultMonitoredResource function.
 	MonitoredResource *monitoredrespb.MonitoredResource
+
+	// Logger implements our Logger interface, providing Printf and Println functions
+	Logger Logger
 }
 
 type taskInfo struct {
@@ -185,13 +196,18 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 			TaskID:    config.TaskID,
 		},
 		debugLogs: config.DebugLogs,
+		log:       config.Logger,
+	}
+
+	if s.log == nil {
+		s.log = log.New(os.Stderr, "go-metrics-stackdriver: ", log.LstdFlags)
 	}
 
 	if config.Prefix != nil {
 		if isValidMetricsPrefix(*config.Prefix) {
 			s.prefix = *config.Prefix
 		} else {
-			log.Printf("%s is not valid string to be used as metrics name, using default value 'go-metrics/'", *config.Prefix)
+			s.log.Printf("%s is not valid string to be used as metrics name, using default value 'go-metrics/'", *config.Prefix)
 		}
 	}
 	// apply defaults if not configured explicitly
@@ -207,7 +223,7 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 	if s.taskInfo.ProjectID == "" {
 		id, err := metadata.ProjectID()
 		if err != nil {
-			log.Printf("could not configure go-metrics stackdriver ProjectID: %s", err)
+			s.log.Printf("could not configure go-metrics stackdriver ProjectID: %s", err)
 		}
 		s.taskInfo.ProjectID = id
 	}
@@ -215,7 +231,7 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 		// attempt to detect
 		zone, err := metadata.Zone()
 		if err != nil {
-			log.Printf("could not configure go-metric stackdriver location: %s", err)
+			s.log.Printf("could not configure go-metric stackdriver location: %s", err)
 			zone = "global"
 		}
 		s.taskInfo.Location = zone
@@ -265,7 +281,7 @@ func (s *Sink) flushMetrics(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("stopped flushing metrics")
+			s.log.Println("stopped flushing metrics")
 			return
 		case <-ticker.C:
 			s.report(ctx)
@@ -327,11 +343,11 @@ func (s *Sink) report(ctx context.Context) {
 	for _, v := range rCounters {
 		name, labels, err := v.name.labelMap(s.extractor, "counter")
 		if err != nil {
-			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
+			s.log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
 		}
 		if s.debugLogs {
-			log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
+			s.log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
 		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
@@ -360,11 +376,11 @@ func (s *Sink) report(ctx context.Context) {
 	for _, v := range rGauges {
 		name, labels, err := v.name.labelMap(s.extractor, "gauge")
 		if err != nil {
-			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
+			s.log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
 		}
 		if s.debugLogs {
-			log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
+			s.log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
 		}
 		ts = append(ts, &monitoringpb.TimeSeries{
 			Metric: &metricpb.Metric{
@@ -393,11 +409,11 @@ func (s *Sink) report(ctx context.Context) {
 	for _, v := range rHistograms {
 		name, labels, err := v.name.labelMap(s.extractor, "histogram")
 		if err != nil {
-			log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
+			s.log.Printf("Could not extract labels from %s: %v", v.name.hash, err)
 			continue
 		}
 		if s.debugLogs {
-			log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
+			s.log.Printf("%v is now %s + (%v)\n", v.name.key, name, labels)
 		}
 
 		var count int64
@@ -461,10 +477,10 @@ func (s *Sink) report(ctx context.Context) {
 		err := s.client.CreateTimeSeries(ctx, req)
 
 		if err != nil {
-			log.Printf("Failed to write time series data: %v", err)
+			s.log.Printf("Failed to write time series data: %v", err)
 			if s.debugLogs {
 				for i, a := range req.TimeSeries {
-					log.Printf("request timeseries[%d]: %v", i, a)
+					s.log.Printf("request timeseries[%d]: %v", i, a)
 				}
 			}
 		}
