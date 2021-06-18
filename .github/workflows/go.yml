@@ -1,23 +1,35 @@
-name: Go
-on: [push]
+name: test
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
 jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        go: [
+          '1.12',
+          '1.13',
+          '1.14',
+          '1.15'
+        ]
 
-  build:
-    name: Build
+    name: unit
     runs-on: ubuntu-latest
+
     steps:
-
-    - name: Set up Go 1.13
-      uses: actions/setup-go@v1
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
       with:
-        go-version: 1.13
-      id: go
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
-
+        go-version: ${{ matrix.go }}
     - name: Build
       run: go build -v .
-    
     - name: Test
-      run: go test ./...
+      run: go test -cover ./...
+    - name: Race
+      run: go test -race ./...

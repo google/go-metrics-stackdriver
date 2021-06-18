@@ -39,21 +39,22 @@ func main() {
 	}
 	defer client.Close()
 
-	projectID, err := metadata.ProjectID()
-	if err != nil {
-		log.Fatal(err)
-	}
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 
-	if os.Getenv("GOOGLE_CLOUD_PROJECT") != "" {
-		projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		if projectID, err = metadata.ProjectID(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	log.Printf("initializing sink, project_id: %q", projectID)
 
 	// create sink
 	ss := stackdriver.NewSink(client, &stackdriver.Config{
-		ProjectID: projectID,
-		Location:  "us-east1-c",
+		ProjectID:         projectID,
+		Location:          "us-east1-c",
+		DebugLogs:         true,
+		ReportingInterval: 35 * time.Second,
 	})
 	cfg := metrics.DefaultConfig("go-metrics-stackdriver")
 	cfg.EnableHostname = false
@@ -107,6 +108,7 @@ func exercise(ctx context.Context, m metrics.MetricSink) {
 			m.AddSample([]string{"method", "dist"}, 50)
 			m.AddSample([]string{"method", "dist"}, 100)
 			m.AddSample([]string{"method", "dist"}, 150)
+			m.AddSample([]string{"foo"}, 100)
 		case <-ctx.Done():
 			log.Printf("terminating")
 			return
