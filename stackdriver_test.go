@@ -17,7 +17,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -1041,6 +1043,7 @@ func newTestSink(interval time.Duration, client *monitoring.MetricClient) *Sink 
 	s.interval = interval
 	s.bucketer = DefaultBucketer
 	s.extractor = DefaultLabelExtractor
+	s.log = log.New(os.Stderr, "go-metrics-stackdriver: ", log.LstdFlags)
 	s.reset()
 	go s.flushMetrics(context.Background())
 	return s
