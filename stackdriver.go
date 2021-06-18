@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package stackdriver provides a cloud monitoring sink for applications
+// instrumented with the go-metrics library.
 package stackdriver
 
 import (
@@ -30,7 +33,6 @@ import (
 	metrics "github.com/armon/go-metrics"
 	googlepb "github.com/golang/protobuf/ptypes/timestamp"
 	distributionpb "google.golang.org/genproto/googleapis/api/distribution"
-	"google.golang.org/genproto/googleapis/api/metric"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
@@ -80,8 +82,8 @@ type Config struct {
 	// variable parameters within a metric name.
 	// Optional. Defaults to DefaultLabelExtractor.
 	LabelExtractor ExtractLabelsFn
-	// Prefix of the metrics recorded. Defaults to "go-metrics/" so your metric "foo" will be recorded as
-	// "custom.googleapis.com/go-metrics/foo".
+	// Prefix of the metrics recorded. Defaults to "go-metrics/" so a metric
+	// "foo" will be recorded as "custom.googleapis.com/go-metrics/foo".
 	Prefix *string
 	// The bucketer is used to determine histogram bucket boundaries
 	// for the sampled metrics. This will execute before the LabelExtractor.
@@ -110,19 +112,21 @@ type Config struct {
 	// Optional. Defaults to a combination of hostname+pid.
 	TaskID string
 
-	// Debug logging. Errors will be logged to stderr, but setting this to true
-	// will log additional information that is helpful when debugging errors.
+	// Debug logging. Errors are always logged to stderr, but setting this to
+	// true will log additional information that is helpful when debugging
+	// errors.
 	// Optional. Defaults to false.
 	DebugLogs bool
 
-	// MonitoredResource identifies the machine/service/resource that is monitored.
-	// Different possible settings are defined here:
+	// MonitoredResource identifies the machine/service/resource that is
+	// monitored. Different possible settings are defined here:
 	// https://cloud.google.com/monitoring/api/resources
 	//
-	// Setting a nil MonitoredResource will run a defaultMonitoredResource function.
+	// Setting a nil MonitoredResource will run a defaultMonitoredResource
+	// function.
 	MonitoredResource *monitoredrespb.MonitoredResource
 
-	// Logger implements our Logger interface, providing Printf and Println functions
+	// Logger that can be injected for custom log formatting.
 	Logger Logger
 }
 
@@ -176,7 +180,7 @@ func DefaultLabelExtractor(key []string, kind string) ([]string, []metrics.Label
 	case "histogram":
 		return key, nil, nil
 	}
-	return nil, nil, fmt.Errorf("Unknown metric kind: %s", kind)
+	return nil, nil, fmt.Errorf("unknown metric kind: %s", kind)
 }
 
 // NewSink creates a Sink to flush metrics to stackdriver every interval. The
@@ -354,10 +358,10 @@ func (s *Sink) report(ctx context.Context) {
 				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
-			MetricKind: metric.MetricDescriptor_GAUGE,
+			MetricKind: metricpb.MetricDescriptor_GAUGE,
 			Resource:   resource,
 			Points: []*monitoringpb.Point{
-				&monitoringpb.Point{
+				{
 					Interval: &monitoringpb.TimeInterval{
 						EndTime: &googlepb.Timestamp{
 							Seconds: end.Unix(),
@@ -387,10 +391,10 @@ func (s *Sink) report(ctx context.Context) {
 				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
-			MetricKind: metric.MetricDescriptor_GAUGE,
+			MetricKind: metricpb.MetricDescriptor_GAUGE,
 			Resource:   resource,
 			Points: []*monitoringpb.Point{
-				&monitoringpb.Point{
+				{
 					Interval: &monitoringpb.TimeInterval{
 						EndTime: &googlepb.Timestamp{
 							Seconds: end.Unix(),
@@ -427,10 +431,10 @@ func (s *Sink) report(ctx context.Context) {
 				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
-			MetricKind: metric.MetricDescriptor_CUMULATIVE,
+			MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 			Resource:   resource,
 			Points: []*monitoringpb.Point{
-				&monitoringpb.Point{
+				{
 					Interval: &monitoringpb.TimeInterval{
 						StartTime: &googlepb.Timestamp{
 							Seconds: s.firstTime.Unix(),
@@ -487,12 +491,12 @@ func (s *Sink) report(ctx context.Context) {
 	}
 }
 
-// A Gauge should retain the last value it is set to.
+// SetGauge retains the last value it is set to.
 func (s *Sink) SetGauge(key []string, val float32) {
 	s.SetGaugeWithLabels(key, val, nil)
 }
 
-// A Gauge should retain the last value it is set to.
+// SetGaugeWithLabels retains the last value it is set to.
 func (s *Sink) SetGaugeWithLabels(key []string, val float32, labels []metrics.Label) {
 	n := newSeries(key, labels)
 
@@ -507,17 +511,17 @@ func (s *Sink) SetGaugeWithLabels(key []string, val float32, labels []metrics.La
 	s.gauges[n.hash] = g
 }
 
-// Should emit a Key/Value pair for each call.
+// EmitKey is not implemented.
 func (s *Sink) EmitKey(key []string, val float32) {
 	// EmitKey is not implemented for stackdriver
 }
 
-// Counters should accumulate values.
+// IncrCounter increments a counter by a value.
 func (s *Sink) IncrCounter(key []string, val float32) {
 	s.IncrCounterWithLabels(key, val, nil)
 }
 
-// Counters should accumulate values.
+// IncrCounterWithLabels increments a counter by a value.
 func (s *Sink) IncrCounterWithLabels(key []string, val float32, labels []metrics.Label) {
 	n := newSeries(key, labels)
 
@@ -535,12 +539,12 @@ func (s *Sink) IncrCounterWithLabels(key []string, val float32, labels []metrics
 	}
 }
 
-// Samples are for timing information, where quantiles are used.
+// AddSample adds a sample to a histogram metric.
 func (s *Sink) AddSample(key []string, val float32) {
 	s.AddSampleWithLabels(key, val, nil)
 }
 
-// Samples are for timing information, where quantiles are used.
+// AddSampleWithLabels adds a sample to a histogram metric.
 func (s *Sink) AddSampleWithLabels(key []string, val float32, labels []metrics.Label) {
 	n := newSeries(key, labels)
 
@@ -566,7 +570,7 @@ type series struct {
 	hash   string
 }
 
-var forbiddenChars = regexp.MustCompile("[ .=\\-/]")
+var forbiddenChars = regexp.MustCompile(`[ .=\-/]`)
 
 func newSeries(key []string, labels []metrics.Label) *series {
 	hash := strings.Join(key, "_")
