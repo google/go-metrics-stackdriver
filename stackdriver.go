@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-	monitoring "cloud.google.com/go/monitoring/apiv3"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	metrics "github.com/armon/go-metrics"
 	googlepb "github.com/golang/protobuf/ptypes/timestamp"
 	distributionpb "google.golang.org/genproto/googleapis/api/distribution"

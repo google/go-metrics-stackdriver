@@ -26,7 +26,7 @@ import (
 	stackdriver "github.com/google/go-metrics-stackdriver"
 
 	"cloud.google.com/go/compute/metadata"
-	monitoring "cloud.google.com/go/monitoring/apiv3"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	metrics "github.com/armon/go-metrics"
 )
 
@@ -58,7 +58,7 @@ func main() {
 	})
 	cfg := metrics.DefaultConfig("go-metrics-stackdriver")
 	cfg.EnableHostname = false
-	metrics.NewGlobal(metrics.DefaultConfig("go-metrics-stackdriver"), ss)
+	metrics.NewGlobal(cfg, ss)
 
 	// start listener
 	log.Printf("starting server")
