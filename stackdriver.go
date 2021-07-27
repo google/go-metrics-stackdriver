@@ -50,9 +50,12 @@ type Logger interface {
 // Sink performs in-process aggregation of metrics to limit calls to
 // stackdriver.
 type Sink struct {
-	client    *monitoring.MetricClient
-	interval  time.Duration
-	firstTime time.Time
+	client         *monitoring.MetricClient
+	interval       time.Duration
+	firstTime      time.Time
+	closeCtx       context.Context
+	closeCtxCancel context.CancelFunc
+	closeDoneC     chan struct{}
 
 	gauges     map[string]*gauge
 	counters   map[string]*counter
@@ -199,9 +202,12 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 			Job:       config.Job,
 			TaskID:    config.TaskID,
 		},
-		debugLogs: config.DebugLogs,
-		log:       config.Logger,
+		debugLogs:  config.DebugLogs,
+		log:        config.Logger,
+		closeDoneC: make(chan struct{}),
 	}
+
+	s.closeCtx, s.closeCtxCancel = context.WithCancel(context.Background())
 
 	if s.log == nil {
 		s.log = log.New(os.Stderr, "go-metrics-stackdriver: ", log.LstdFlags)
@@ -263,7 +269,7 @@ func NewSink(client *monitoring.MetricClient, config *Config) *Sink {
 	s.reset()
 
 	// run cancelable goroutine that reports on interval
-	go s.flushMetrics(context.Background())
+	go s.reportOnInterval()
 
 	return s
 }
@@ -274,7 +280,7 @@ func isValidMetricsPrefix(s string) bool {
 	return err == nil && match
 }
 
-func (s *Sink) flushMetrics(ctx context.Context) {
+func (s *Sink) reportOnInterval() {
 	if s.interval == 0*time.Second {
 		return
 	}
@@ -284,11 +290,12 @@ func (s *Sink) flushMetrics(ctx context.Context) {
 
 	for {
 		select {
-		case <-ctx.Done():
-			s.log.Println("stopped flushing metrics")
+		case <-s.closeCtx.Done():
+			s.log.Println("stopped reporting metrics on interval")
+			close(s.closeDoneC)
 			return
 		case <-ticker.C:
-			s.report(ctx)
+			s.report(s.closeCtx)
 		}
 	}
 }
@@ -559,6 +566,20 @@ func (s *Sink) AddSampleWithLabels(key []string, val float32, labels []metrics.L
 		h.addSample(val)
 		s.histograms[n.hash] = h
 	}
+}
+
+// Close closes the sink and flushes any remaining data.
+func (s *Sink) Close(ctx context.Context) error {
+	s.closeCtxCancel()
+	select {
+	case <-ctx.Done():
+		s.log.Println("sink close finished prematurely")
+		return ctx.Err()
+	case <-s.closeDoneC:
+	}
+	s.report(ctx)
+
+	return nil
 }
 
 var _ metrics.MetricSink = (*Sink)(nil)
