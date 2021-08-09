@@ -127,6 +127,7 @@ func TestNewSinkSetCustomPrefix(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			ss := NewSink(nil, &Config{Prefix: tc.configPrefix})
+			defer ss.Close(context.Background())
 
 			if ss.prefix != tc.expectedPrefix {
 				t.Errorf("prefix should be initalized as '" + tc.expectedPrefix + "' but got " + ss.prefix)
@@ -1044,7 +1045,7 @@ func newTestSink(interval time.Duration, client *monitoring.MetricClient) *Sink 
 	s.extractor = DefaultLabelExtractor
 	s.log = log.New(os.Stderr, "go-metrics-stackdriver: ", log.LstdFlags)
 	s.reset()
-	go s.flushMetrics(context.Background())
+	go s.reportOnInterval()
 	return s
 }
 
@@ -1123,6 +1124,7 @@ func TestCustomMonitorResource(t *testing.T) {
 			Type:   "k8s_container",
 		},
 	})
+	defer sink.Close(context.Background())
 
 	monitoredResourceDiff(t, sink, labels)
 }
@@ -1132,6 +1134,7 @@ func TestCustomMonitorResourceWithDefaultLabels(t *testing.T) {
 		ProjectID: "example_project",
 		Prefix:    sPtr(""),
 	})
+	defer sink.Close(context.Background())
 
 	labels := defaultMonitoredResource(sink.taskInfo).GetLabels()
 
@@ -1160,6 +1163,7 @@ func TestCustomMonitorResourceWithInvalidLabels(t *testing.T) {
 			Type:   "k8s_container",
 		},
 	})
+	defer sink.Close(context.Background())
 
 	if diff := cmp.Diff(sink.monitoredResource.GetLabels(), invalidLabels); diff == "" {
 		t.Error("Monitored Resource labels should not be equal")

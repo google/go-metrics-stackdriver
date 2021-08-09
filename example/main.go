@@ -56,9 +56,11 @@ func main() {
 		DebugLogs:         true,
 		ReportingInterval: 35 * time.Second,
 	})
+	defer ss.Close(context.Background())
+
 	cfg := metrics.DefaultConfig("go-metrics-stackdriver")
 	cfg.EnableHostname = false
-	metrics.NewGlobal(metrics.DefaultConfig("go-metrics-stackdriver"), ss)
+	metrics.NewGlobal(cfg, ss)
 
 	// start listener
 	log.Printf("starting server")
@@ -89,7 +91,7 @@ func main() {
 		<-c
 		log.Printf("ctrl+c detected... shutting down")
 		cancel()
-		srv.Shutdown(ctx)
+		srv.Shutdown(context.Background())
 	}()
 
 	// generate data
