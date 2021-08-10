@@ -365,7 +365,7 @@ func (s *Sink) report(ctx context.Context) {
 				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
-			MetricKind: metricpb.MetricDescriptor_GAUGE,
+			MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 			Resource:   resource,
 			Points: []*monitoringpb.Point{
 				{
