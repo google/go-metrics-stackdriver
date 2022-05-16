@@ -1,6 +1,6 @@
 module github.com/google/go-metrics-stackdriver
 
-go 1.12
+go 1.15
 
 require (
 	cloud.google.com/go v0.101.1 // indirect
