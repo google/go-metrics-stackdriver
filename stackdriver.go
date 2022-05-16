@@ -582,6 +582,16 @@ func (s *Sink) Close(ctx context.Context) error {
 	return nil
 }
 
+// Shutdown is a blocking function that flushes metrics in preparation of the
+// application exiting.
+func (s *Sink) Shutdown() {
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(10*time.Second))
+	defer cancel()
+	if err := s.Close(ctx); err != nil {
+		s.log.Printf("Error shutting down go-metrics-stackdriver: %v", err)
+	}
+}
+
 var _ metrics.MetricSink = (*Sink)(nil)
 
 // Series holds the naming for a timeseries metric.

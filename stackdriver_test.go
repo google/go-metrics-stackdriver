@@ -1124,7 +1124,7 @@ func TestCustomMonitorResource(t *testing.T) {
 			Type:   "k8s_container",
 		},
 	})
-	defer sink.Close(context.Background())
+	defer sink.Shutdown()
 
 	monitoredResourceDiff(t, sink, labels)
 }
