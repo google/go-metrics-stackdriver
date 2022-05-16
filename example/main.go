@@ -15,7 +15,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -80,7 +79,7 @@ func main() {
 		Addr: ":" + port,
 	}
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.ListenAndServe(); err != nil {
 			log.Printf("server error: %s", err)
 		}
 	}()
