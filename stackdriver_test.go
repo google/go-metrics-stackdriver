@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -365,7 +365,7 @@ func TestSample(t *testing.T) {
 								Metric: &metricpb.Metric{
 									Type: "custom.googleapis.com/go-metrics/foo_bar_counter",
 								},
-								MetricKind: metricpb.MetricDescriptor_GAUGE,
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 								Points: []*monitoringpb.Point{
 									{
 										Value: &monitoringpb.TypedValue{
@@ -402,7 +402,7 @@ func TestSample(t *testing.T) {
 										"env": "dev",
 									},
 								},
-								MetricKind: metricpb.MetricDescriptor_GAUGE,
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 								Points: []*monitoringpb.Point{
 									{
 										Value: &monitoringpb.TypedValue{
@@ -438,7 +438,7 @@ func TestSample(t *testing.T) {
 								Metric: &metricpb.Metric{
 									Type: "custom.googleapis.com/go-metrics/foo_bar_counter",
 								},
-								MetricKind: metricpb.MetricDescriptor_GAUGE,
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 								Points: []*monitoringpb.Point{
 									{
 										Value: &monitoringpb.TypedValue{
@@ -773,7 +773,7 @@ func TestExtract(t *testing.T) {
 										"method": "bar",
 									},
 								},
-								MetricKind: metricpb.MetricDescriptor_GAUGE,
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 								Points: []*monitoringpb.Point{
 									{
 										Value: &monitoringpb.TypedValue{
@@ -914,7 +914,7 @@ func TestExtract(t *testing.T) {
 										"method": "baz",
 									},
 								},
-								MetricKind: metricpb.MetricDescriptor_GAUGE,
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 								Points: []*monitoringpb.Point{
 									{
 										Value: &monitoringpb.TypedValue{

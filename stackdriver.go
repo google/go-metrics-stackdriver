@@ -325,8 +325,9 @@ func (s *Sink) deep() (time.Time, map[string]*gauge, map[string]*counter, map[st
 	}
 	for k, v := range s.counters {
 		rCounters[k] = &counter{
-			name:  v.name,
-			value: v.value,
+			name:      v.name,
+			value:     v.value,
+			startTime: v.startTime,
 		}
 	}
 	for k, v := range s.histograms {
@@ -365,11 +366,14 @@ func (s *Sink) report(ctx context.Context) {
 				Type:   fmt.Sprintf("custom.googleapis.com/%s%s", s.prefix, name),
 				Labels: labels,
 			},
-			MetricKind: metricpb.MetricDescriptor_GAUGE,
+			MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
 			Resource:   resource,
 			Points: []*monitoringpb.Point{
 				{
 					Interval: &monitoringpb.TimeInterval{
+						StartTime: &googlepb.Timestamp{
+							Seconds: v.startTime.Unix(),
+						},
 						EndTime: &googlepb.Timestamp{
 							Seconds: end.Unix(),
 						},
@@ -537,11 +541,23 @@ func (s *Sink) IncrCounterWithLabels(key []string, val float32, labels []metrics
 
 	c, ok := s.counters[n.hash]
 	if ok {
+		// counter exists; increment value
 		c.value += float64(val)
+		// start times cannot be over 25 hours old; reset after 24h
+		age := time.Now().Unix() - c.startTime.Unix()
+		if age > 86400 {
+			// Start times _must_ be before the end time (which is set in Report()),
+			// so backdate our new start time to 1ms before the observed time.
+			c.startTime = time.Now().Add(time.Millisecond * -1)
+		}
 	} else {
+		// init new counter
 		s.counters[n.hash] = &counter{
 			name:  n,
 			value: float64(val),
+			// startTime must predate what GCM believes is "now" when we create the interval;
+			// so backdate by 1ms
+			startTime: time.Now().Add(time.Millisecond * -1),
 		}
 	}
 }
@@ -645,8 +661,9 @@ type gauge struct {
 
 // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#point
 type counter struct {
-	name  *series
-	value float64
+	name      *series
+	value     float64
+	startTime time.Time
 }
 
 // https://cloud.google.com/monitoring/api/ref_v3/rest/v3/TimeSeries#distribution
