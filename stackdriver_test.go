@@ -459,6 +459,81 @@ func TestSample(t *testing.T) {
 			},
 		},
 		{
+			name: "reset counter",
+			collect: func() {
+				ss.IncrCounter([]string{"foo", "bar"}, 1.0)
+				ss.IncrCounter([]string{"foo", "bar"}, 1.0)
+				ss.ResetCounter([]string{"foo", "bar"})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo_bar_counter",
+								},
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
+								Points: []*monitoringpb.Point{
+									{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DoubleValue{
+												DoubleValue: 0.0,
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
+			name: "reset counter with label",
+			collect: func() {
+				ss.IncrCounterWithLabels([]string{"foo", "bar"}, 1.0, []metrics.Label{{Name: "env", Value: "dev"}})
+				ss.IncrCounterWithLabels([]string{"foo", "bar"}, 1.0, []metrics.Label{{Name: "env", Value: "dev"}})
+				ss.ResetCounterWithLabels([]string{"foo", "bar"}, []metrics.Label{{Name: "env", Value: "dev"}})
+			},
+			createFn: func(t *testing.T) func(context.Context, *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+				return func(_ context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+					want := &monitoringpb.CreateTimeSeriesRequest{
+						Name: "projects/foo",
+						TimeSeries: []*monitoringpb.TimeSeries{
+							{
+								Metric: &metricpb.Metric{
+									Type: "custom.googleapis.com/go-metrics/foo_bar_counter",
+									Labels: map[string]string{
+										"env": "dev",
+									},
+								},
+								MetricKind: metricpb.MetricDescriptor_CUMULATIVE,
+								Points: []*monitoringpb.Point{
+									{
+										Value: &monitoringpb.TypedValue{
+											Value: &monitoringpb.TypedValue_DoubleValue{
+												DoubleValue: 0.0,
+											},
+										},
+									},
+								},
+							},
+						},
+					}
+					if diff := diffCreateMsg(want, req); diff != "" {
+						t.Errorf("unexpected CreateTimeSeriesRequest (-want +got):\n%s", diff)
+					}
+					return &emptypb.Empty{}, nil
+				}
+			},
+		},
+		{
 			name: "gauge",
 			collect: func() {
 				ss.SetGauge([]string{"foo", "bar"}, 50.0)

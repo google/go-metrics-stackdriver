@@ -562,6 +562,34 @@ func (s *Sink) IncrCounterWithLabels(key []string, val float32, labels []metrics
 	}
 }
 
+// ResetCounter resets a counter to zero
+func (s *Sink) ResetCounter(key []string) {
+	s.ResetCounterWithLabels(key, nil)
+}
+
+// ResetCounterWithLabels resets a counter to zero
+func (s *Sink) ResetCounterWithLabels(key []string, labels []metrics.Label) {
+	n := newSeries(key, labels)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	initVal := float64(0)
+	startTime := time.Now().Add(time.Millisecond * -1)
+	c, ok := s.counters[n.hash]
+	if ok {
+		// counter exists, reset to 0 and reset startTime
+		c.value = initVal
+		c.startTime = startTime
+	} else {
+		// counter did not exist, init at 0 value
+		s.counters[n.hash] = &counter{
+			name:      n,
+			value:     initVal,
+			startTime: startTime,
+		}
+	}
+}
+
 // AddSample adds a sample to a histogram metric.
 func (s *Sink) AddSample(key []string, val float32) {
 	s.AddSampleWithLabels(key, val, nil)
