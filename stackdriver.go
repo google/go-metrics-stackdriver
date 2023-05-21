@@ -29,13 +29,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-	monitoring "cloud.google.com/go/monitoring/apiv3"
-	metrics "github.com/armon/go-metrics"
-	googlepb "github.com/golang/protobuf/ptypes/timestamp"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
+	metrics "github.com/hashicorp/go-metrics"
 	distributionpb "google.golang.org/genproto/googleapis/api/distribution"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Logger is the log interface used in go-metrics-stackdriver
@@ -371,12 +371,8 @@ func (s *Sink) report(ctx context.Context) {
 			Points: []*monitoringpb.Point{
 				{
 					Interval: &monitoringpb.TimeInterval{
-						StartTime: &googlepb.Timestamp{
-							Seconds: v.startTime.Unix(),
-						},
-						EndTime: &googlepb.Timestamp{
-							Seconds: end.Unix(),
-						},
+						StartTime: timestamppb.New(v.startTime),
+						EndTime:   timestamppb.New(end),
 					},
 					Value: &monitoringpb.TypedValue{
 						Value: &monitoringpb.TypedValue_DoubleValue{
@@ -407,9 +403,7 @@ func (s *Sink) report(ctx context.Context) {
 			Points: []*monitoringpb.Point{
 				{
 					Interval: &monitoringpb.TimeInterval{
-						EndTime: &googlepb.Timestamp{
-							Seconds: end.Unix(),
-						},
+						EndTime: timestamppb.New(end),
 					},
 					Value: &monitoringpb.TypedValue{
 						Value: &monitoringpb.TypedValue_DoubleValue{
@@ -447,12 +441,8 @@ func (s *Sink) report(ctx context.Context) {
 			Points: []*monitoringpb.Point{
 				{
 					Interval: &monitoringpb.TimeInterval{
-						StartTime: &googlepb.Timestamp{
-							Seconds: s.firstTime.Unix(),
-						},
-						EndTime: &googlepb.Timestamp{
-							Seconds: end.Unix(),
-						},
+						StartTime: timestamppb.New(s.firstTime),
+						EndTime:   timestamppb.New(end),
 					},
 					Value: &monitoringpb.TypedValue{
 						Value: &monitoringpb.TypedValue_DistributionValue{
