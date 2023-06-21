@@ -24,17 +24,17 @@ import (
 	"testing"
 	"time"
 
-	monitoring "cloud.google.com/go/monitoring/apiv3"
-	metrics "github.com/armon/go-metrics"
-	emptypb "github.com/golang/protobuf/ptypes/empty"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/google/go-cmp/cmp"
+	metrics "github.com/hashicorp/go-metrics"
 	"google.golang.org/api/option"
 	distributionpb "google.golang.org/genproto/googleapis/api/distribution"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 func benchmarkAddSample(concurrency int, b *testing.B) {

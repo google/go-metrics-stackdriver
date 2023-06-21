@@ -16,7 +16,7 @@
 // conversions specific to HashiCorp Vault.
 package vault
 
-import "github.com/armon/go-metrics"
+import "github.com/hashicorp/go-metrics"
 
 // Extractor extracts known patterns from the key into metrics.Label for better metric grouping
 // and to help avoid the limit of 500 custom metric descriptors per project

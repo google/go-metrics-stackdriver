@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,8 +27,8 @@ import (
 	stackdriver "github.com/google/go-metrics-stackdriver"
 
 	"cloud.google.com/go/compute/metadata"
-	monitoring "cloud.google.com/go/monitoring/apiv3"
-	metrics "github.com/armon/go-metrics"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	metrics "github.com/hashicorp/go-metrics"
 )
 
 func main() {
